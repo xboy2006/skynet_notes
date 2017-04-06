@@ -1,0 +1,1014 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"loadtext",
+				"loadTexture(plist, png)\tCCSSceneLoader"
+			],
+			[
+				"first",
+				"first_id\t."
+			],
+			[
+				"getdatab",
+				"getDatasByType(itype)\tSynthetiseConf"
+			],
+			[
+				"getdata",
+				"getDatasByType(itype)\tSynthetiseConf"
+			],
+			[
+				"for",
+				"for\tfor i=1,10"
+			],
+			[
+				"setvi",
+				"setVisible(visible)\tNode"
+			],
+			[
+				"de",
+				"delItem()\tItemState"
+			],
+			[
+				"del",
+				"del()\tSynthetise"
+			],
+			[
+				"item",
+				"item\t."
+			],
+			[
+				"Synthe",
+				"SynthetiseView\t."
+			],
+			[
+				"it",
+				"item\t."
+			],
+			[
+				"tr",
+				"true"
+			],
+			[
+				"setanch",
+				"setAnchorPoint(ap)\tUILayout"
+			],
+			[
+				"getitem",
+				"getItemCount(item_id)\tSynthetiseConf"
+			],
+			[
+				"Syntheti",
+				"SynthetiseConf\t."
+			],
+			[
+				"Sy",
+				"SynthetiseConf\t."
+			],
+			[
+				"ret",
+				"return"
+			],
+			[
+				"insert",
+				"table.insert(table,[pos,]value)"
+			],
+			[
+				"Synt",
+				"Synthetise\t."
+			],
+			[
+				"func",
+				"function\tfunction"
+			],
+			[
+				"removefr",
+				"removeFromParent()\tNode"
+			],
+			[
+				"setst",
+				"setString(text)\tLabel"
+			],
+			[
+				"select_img",
+				"SELECT_IMG"
+			],
+			[
+				"ITEM",
+				"ITEM_NUM"
+			]
+		]
+	},
+	"buffers":
+	[
+		{
+			"file": "Makefile",
+			"settings":
+			{
+				"buffer_size": 4763,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "platform.mk",
+			"settings":
+			{
+				"buffer_size": 920,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "README.md",
+			"settings":
+			{
+				"buffer_size": 1014,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"contents": "Searching 491 files for \"luaopen_skynet_core\"\n\nD:\\share_code\\skynet\\lualib-src\\lua-skynet.c:\n  368  \n  369  int\n  370: luaopen_skynet_core(lua_State *L) {\n  371  \tluaL_checkversion(L);\n  372  \n\n1 match in 1 file\n\n\nSearching 491 files for \"luaopen_skynet_core\"\n\nD:\\share_code\\skynet\\lualib-src\\lua-skynet.c:\n  368  \n  369  int\n  370: luaopen_skynet_core(lua_State *L) {\n  371  \tluaL_checkversion(L);\n  372  \n\n1 match in 1 file\n",
+			"settings":
+			{
+				"buffer_size": 426,
+				"line_ending": "Windows",
+				"name": "Find Results",
+				"scratch": true
+			}
+		},
+		{
+			"file": "lualib-src/lua-skynet.c",
+			"settings":
+			{
+				"buffer_size": 9321,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/D/share_code/ddz_skynet/skynet/lualib/socket.lua",
+			"settings":
+			{
+				"buffer_size": 9300,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "examples/main.lua",
+			"settings":
+			{
+				"buffer_size": 565,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "examples/agent.lua",
+			"settings":
+			{
+				"buffer_size": 2082,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "lualib/skynet.lua",
+			"settings":
+			{
+				"buffer_size": 15860,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/D/share_code/c/main.c",
+			"settings":
+			{
+				"buffer_size": 196,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		}
+	],
+	"build_system": "",
+	"build_system_choices":
+	[
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 392.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				":fctor",
+				"File: New File Relative to Project Root"
+			],
+			[
+				":g",
+				"Set Syntax: Go"
+			],
+			[
+				"insta",
+				"Package Control: Install Package"
+			]
+		],
+		"width": 400.0
+	},
+	"console":
+	{
+		"height": 0.0,
+		"history":
+		[
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"expanded_folders":
+	[
+	],
+	"file_history":
+	[
+		"/D/develop/src/SceneLayer/TaskLayer.lua",
+		"/D/develop/src/view/rank/RankView.lua",
+		"/D/develop/src/SceneLayer/RankScene.lua",
+		"/D/develop/src/view/task/TaskItem.lua",
+		"/D/develop/src/SceneLayer/ItemIcon.lua",
+		"/D/develop/src/base/TableView.lua",
+		"/D/develop/src/base/TableItem.lua",
+		"/D/develop/src/SceneLayer/Fairyau/FairyauMainLayer.lua",
+		"/D/develop/src/SceneLayer/Fairyau/FairyauScene.lua",
+		"/D/develop/src/SceneLayer/Fairyau/CreateFairyauLayer.lua",
+		"/D/develop/src/ExcelData/item_compose_conf_CSVFile.lua",
+		"/D/develop/src/SceneLayer/Fairyau/FairyauApplyLayer.lua",
+		"/D/develop/src/view/fairyau/FairyauApplyView.lua",
+		"/D/develop/src/DataManager/ItemData.lua",
+		"/D/develop/src/common/CommonUIMethods.lua",
+		"/D/develop/src/view/rank/RankTableView.lua",
+		"/D/develop/src/view/rank/RankTableItem.lua",
+		"/D/develop/src/SceneLayer/explore/ExploreLayer.lua",
+		"/D/develop/src/DataManager/GameData.lua",
+		"/D/develop/src/DataManager/RiskData.lua",
+		"/D/develop/src/SceneLayer/Fairyau/FairyauCopyLayerEx.lua",
+		"/D/develop/src/SceneLayer/explore/ExploreSelectLayer.lua",
+		"/D/develop/src/view/explore/ExploreTableItem.lua",
+		"/D/trunk/src/GPAchievements.lua",
+		"/D/trunk/frameworks/runtime-src/proj.android_kr_cultureland/src/com/cultureland/CulturelandStore.java",
+		"/D/trunk/src/SLMessage.lua",
+		"/D/trunk/frameworks/runtime-src/android_sdk_lib/cultureland_sdk/java/com/googleplay/services/GooglePlayServices.java",
+		"/D/trunk/frameworks/runtime-src/proj.android_kr_gp/src/com/googleplay/services/GooglePlayServices.java"
+	],
+	"find":
+	{
+		"height": 34.0
+	},
+	"find_in_files":
+	{
+		"height": 90.0,
+		"where_history":
+		[
+			"D:\\share_code\\skynet",
+			"D:\\share_code\\skynet\\skynet-src",
+			"D:\\develop\\src",
+			"D:\\trunk\\src"
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"MYCFLAGS",
+			"luaopen_skynet_core",
+			"lsend",
+			"luaL_Reg",
+			"luaL_setfuncs",
+			"luaopen_skynet_core",
+			"vpath",
+			".PHONY",
+			"skynet_start",
+			"timeout",
+			"start(",
+			"start(*)",
+			"start",
+			"linuxzzzzzzzzzzzzzzzzz",
+			"linux",
+			"showHeChengSuc",
+			"setData",
+			"getItemData",
+			"ItemState",
+			"self.view_",
+			"setSelectIndexItem",
+			"showHeChengSuc",
+			"update_bag_opt_2",
+			"ItemDataUnit",
+			"SynthetiseConf",
+			"ItemDataUnit",
+			"item_data",
+			"getItemByItemId",
+			"getitem",
+			"getItemId",
+			"item_data",
+			"getItemByItemId",
+			"findItemWithIndex",
+			"MsgReqKnapsack",
+			"nexttick",
+			"getItemData",
+			"loadTexture",
+			"Image_2",
+			"m_award_items_vec",
+			"common",
+			"onExit",
+			"ForgeMainLayer",
+			"Synthetise",
+			"strategyView_",
+			"view_",
+			"tabSelectCallback",
+			"SLUI:bindTabEx",
+			"typeSelectCB",
+			"getDatas",
+			"showStrategy",
+			"GoodsTableView",
+			"addTouchListener",
+			"m_is_show_tip",
+			"rewardPnl_",
+			"GoodsTableItem",
+			"getItemData",
+			"getMaxBeishu",
+			"getItemData",
+			"beishu",
+			"getItemData",
+			"itemClickCallback_",
+			"getItemData",
+			"setItemData",
+			"getItemData",
+			"TXT_COUNT",
+			"items_",
+			"self.datas_",
+			"itemClickCallback_",
+			"TEXTFIELD_FIND",
+			"TEXTFIELD_NAME",
+			"setItemData",
+			"ItemData",
+			"update",
+			"setItemData",
+			"ItemData:getInstance()",
+			"ItemData",
+			"getItemByItemId",
+			"item_data",
+			"ItemDataUnit",
+			"ItemDataUnit:getItemNum()",
+			"item",
+			"initCopyItem",
+			"chapterDatas_",
+			"chapterBtnCallback",
+			"getCaveRiskCSVFile",
+			"xianMengRankCSVFile",
+			"choose_conf",
+			"shop_discount_conf_CSVFile",
+			"GoodsTableItem",
+			"tableView_",
+			"RankTableView",
+			"GoodsTableItem",
+			"RankTableView",
+			"clickItemCallback_",
+			"ExploreTableView",
+			"ExploreTableItem",
+			"checkTeamLevel",
+			"achievementTeamLevel70Achieve"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+			"StrategyTableView",
+			"StrategyTableItem",
+			"GoodsTableView",
+			"GoodsTableItem"
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"folders":
+	[
+		{
+			"path": "D:\\share_code\\skynet"
+		},
+		{
+			"path": "D:\\share_code\\c"
+		},
+		{
+			"path": "D:\\share_code\\ddz_skynet"
+		}
+	],
+	"groups":
+	[
+		{
+			"selected": 0,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "Makefile",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 4763,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								3667,
+								3667
+							]
+						],
+						"settings":
+						{
+							"is_init_dirty_state": false,
+							"origin_encoding": "ASCII",
+							"syntax": "Packages/Makefile/Makefile.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 1350.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "platform.mk",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 920,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								172,
+								172
+							]
+						],
+						"settings":
+						{
+							"is_init_dirty_state": false,
+							"origin_encoding": "ASCII",
+							"syntax": "Packages/Makefile/Makefile.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "README.md",
+					"semi_transient": true,
+					"settings":
+					{
+						"buffer_size": 1014,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"origin_encoding": "ASCII",
+							"syntax": "Packages/Markdown/Markdown.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 426,
+						"regions":
+						{
+							"match":
+							{
+								"flags": 112,
+								"regions":
+								[
+									[
+										119,
+										138
+									],
+									[
+										333,
+										352
+									]
+								],
+								"scope": ""
+							}
+						},
+						"selection":
+						[
+							[
+								350,
+								350
+							]
+						],
+						"settings":
+						{
+							"default_dir": "D:\\share_code\\skynet",
+							"detect_indentation": false,
+							"line_numbers": false,
+							"output_tag": 2,
+							"result_base_dir": "",
+							"result_file_regex": "^([^ \t].*):$",
+							"result_line_regex": "^ +([0-9]+):",
+							"scroll_past_end": true,
+							"syntax": "Packages/Default/Find Results.hidden-tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 5,
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "lualib-src/lua-skynet.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 9321,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								8551,
+								8551
+							]
+						],
+						"settings":
+						{
+							"origin_encoding": "ASCII",
+							"syntax": "Packages/C++/C.sublime-syntax",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 5161.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 4,
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "/D/share_code/ddz_skynet/skynet/lualib/socket.lua",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 9300,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								460,
+								460
+							]
+						],
+						"settings":
+						{
+							"origin_encoding": "ASCII",
+							"syntax": "Packages/Lua/Lua.sublime-syntax",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 3,
+					"type": "text"
+				},
+				{
+					"buffer": 6,
+					"file": "examples/main.lua",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 565,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								438,
+								438
+							]
+						],
+						"settings":
+						{
+							"is_init_dirty_state": false,
+							"origin_encoding": "ASCII",
+							"syntax": "Packages/Lua/Lua.sublime-syntax",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 7,
+					"type": "text"
+				},
+				{
+					"buffer": 7,
+					"file": "examples/agent.lua",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 2082,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2082,
+								2082
+							]
+						],
+						"settings":
+						{
+							"is_init_dirty_state": false,
+							"origin_encoding": "ASCII",
+							"syntax": "Packages/Lua/Lua.sublime-syntax",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 1170.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 9,
+					"type": "text"
+				},
+				{
+					"buffer": 8,
+					"file": "lualib/skynet.lua",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 15860,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								15320,
+								15320
+							]
+						],
+						"settings":
+						{
+							"is_init_dirty_state": false,
+							"origin_encoding": "ASCII",
+							"syntax": "Packages/Lua/Lua.sublime-syntax",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 9303.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 6,
+					"type": "text"
+				},
+				{
+					"buffer": 9,
+					"file": "/D/share_code/c/main.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 196,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								137,
+								137
+							]
+						],
+						"settings":
+						{
+							"is_init_dirty_state": false,
+							"open_with_edit": true,
+							"syntax": "Packages/C++/C.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 8,
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 23.0
+	},
+	"input":
+	{
+		"height": 31.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"pinned_build_system": "",
+	"project": "",
+	"replace":
+	{
+		"height": 42.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"socket.lua",
+				"ddz_skynet\\skynet\\lualib\\socket.lua"
+			],
+			[
+				"skynet",
+				"skynet\\lualib\\skynet.lua"
+			],
+			[
+				"skynet.lua",
+				"lualib\\skynet.lua"
+			],
+			[
+				"agent",
+				"examples\\agent.lua"
+			],
+			[
+				"main",
+				"examples\\main.lua"
+			],
+			[
+				"commonawardlayer",
+				"src\\SceneLayer\\CommonAwardLayer.lua"
+			],
+			[
+				"baglayer",
+				"src\\SceneLayer\\BagLayer.lua"
+			],
+			[
+				"itemdata",
+				"src\\DataManager\\ItemData.lua"
+			],
+			[
+				"popupwindow",
+				"src\\SceneLayer\\PopupWindow.lua"
+			],
+			[
+				"msgkn",
+				"src\\MessageFile\\msgknapsack.proto"
+			],
+			[
+				"tableview",
+				"src\\base\\TableView.lua"
+			],
+			[
+				"reward",
+				"src\\view\\explore\\RewardView.lua"
+			],
+			[
+				"exploreevne",
+				"src\\SceneLayer\\explore\\ExploreEventLayer.lua"
+			],
+			[
+				"explorelayer",
+				"src\\SceneLayer\\explore\\ExploreLayer.lua"
+			],
+			[
+				"synthetiseview",
+				"src\\view\\synthetise\\SynthetiseView.lua"
+			],
+			[
+				"rankscena",
+				"src\\SceneLayer\\RankScene.lua"
+			],
+			[
+				"tasklayer",
+				"src\\SceneLayer\\TaskLayer.lua"
+			],
+			[
+				"itemicon",
+				"src\\SceneLayer\\ItemIcon.lua"
+			],
+			[
+				"taskite",
+				"src\\view\\task\\TaskItem.lua"
+			],
+			[
+				"fairyaumain",
+				"src\\SceneLayer\\Fairyau\\FairyauMainLayer.lua"
+			],
+			[
+				"fairyauscne",
+				"src\\SceneLayer\\Fairyau\\FairyauScene.lua"
+			],
+			[
+				"item_compose_conf_csvfile",
+				"src\\ExcelData\\item_compose_conf_CSVFile.lua"
+			],
+			[
+				"gamedat",
+				"src\\DataManager\\GameData.lua"
+			],
+			[
+				"tableite",
+				"src\\base\\TableItem.lua"
+			],
+			[
+				"gamedata",
+				"src\\DataManager\\GameData.lua"
+			],
+			[
+				"goodstableview",
+				"src\\view\\synthetise\\GoodsTableView.lua"
+			],
+			[
+				"fairyauapplyview",
+				"src\\view\\fairyau\\FairyauApplyView.lua"
+			],
+			[
+				"fairyauapplylayer",
+				"src\\SceneLayer\\Fairyau\\FairyauApplyLayer.lua"
+			],
+			[
+				"fairyausce",
+				"src\\SceneLayer\\Fairyau\\FairyauScene.lua"
+			],
+			[
+				"createfiayr",
+				"src\\SceneLayer\\Fairyau\\CreateFairyauLayer.lua"
+			],
+			[
+				"goodstableitem",
+				"src\\view\\synthetise\\GoodsTableItem.lua"
+			],
+			[
+				"synthetiseconf",
+				"src\\view\\synthetise\\SynthetiseConf.lua"
+			],
+			[
+				"taskitem",
+				"src\\view\\task\\TaskItem.lua"
+			],
+			[
+				"tasklay",
+				"src\\SceneLayer\\TaskLayer.lua"
+			],
+			[
+				"fairyaucopy",
+				"src\\SceneLayer\\Fairyau\\FairyauCopyLayerEx.lua"
+			],
+			[
+				"ranktableview",
+				"src\\view\\rank\\RankTableView.lua"
+			],
+			[
+				"rankview",
+				"src\\view\\rank\\RankView.lua"
+			],
+			[
+				"rankscne",
+				"src\\SceneLayer\\RankScene.lua"
+			],
+			[
+				"rankta",
+				"src\\view\\rank\\RankTableView.lua"
+			],
+			[
+				"rankitem",
+				"src\\view\\rank\\RankTableItem.lua"
+			],
+			[
+				"tableitem",
+				"src\\base\\TableItem.lua"
+			],
+			[
+				"exploretableitem",
+				"src\\view\\explore\\ExploreTableItem.lua"
+			],
+			[
+				"exploreselect",
+				"src\\SceneLayer\\explore\\ExploreSelectLayer.lua"
+			],
+			[
+				"synthetisestrategyview",
+				"src\\view\\synthetise\\SynthetiseStrategyView.lua"
+			],
+			[
+				"sy",
+				"src\\SceneLayer\\Forge\\Synthetise.lua"
+			],
+			[
+				"gpa",
+				"src\\GPAchievements.lua"
+			]
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_symbol":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+	},
+	"show_minimap": true,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 313.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}
