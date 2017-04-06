@@ -12,6 +12,8 @@
 #include <string.h>
 #include <assert.h>
 
+//核心库，封装skynet给lua使用
+
 struct snlua {
 	lua_State * L;
 	struct skynet_context * ctx;

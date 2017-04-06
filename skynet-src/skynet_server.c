@@ -22,6 +22,8 @@
 #include <stdio.h>
 #include <stdbool.h>
 
+//Skynet主要功能，初始化组件、加载服务和通知服务
+
 #ifdef CALLING_CHECK
 
 #define CHECKCALLING_BEGIN(ctx) if (!(spinlock_trylock(&ctx->calling))) { assert(0); }

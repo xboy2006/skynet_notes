@@ -21,6 +21,8 @@
 #include <stdint.h>
 #include <unistd.h>
 
+//节点服务，与其他节点互通
+
 #define HASH_SIZE 4096
 #define DEFAULT_QUEUE_SIZE 1024
 

@@ -8,6 +8,7 @@
 
 #ifndef USE_PTHREAD_LOCK
 
+//原子操作的互斥锁
 struct spinlock {
 	int lock;
 };
@@ -45,7 +46,7 @@ spinlock_destroy(struct spinlock *lock) {
 // you can also replace to pthread_spinlock
 
 struct spinlock {
-	pthread_mutex_t lock;
+	pthread_mutex_t lock;//mutex实现的互斥锁
 };
 
 static inline void

@@ -22,6 +22,8 @@
 
 */
 
+//启动节点服务，以及注册和发消息给远程节点。
+
 // harbor 服务对应的 skynet_context 指针
 //harbor 用来与远程主机通信 master 统一来管理
 static struct skynet_context * REMOTE = 0;

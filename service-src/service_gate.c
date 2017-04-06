@@ -10,6 +10,8 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+//网关服务，管理Socket
+
 #define BACKLOG 32
 
 struct connection {
