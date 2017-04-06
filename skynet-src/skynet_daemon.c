@@ -106,7 +106,7 @@ daemon_init(const char *pidfile) {
 		fprintf(stderr, "Can't daemonize.\n");
 		return 1;
 
-		//int daemon(int nochdir, int noclose); 
+		//int daemon(int nochdir, int noclose);  程序将在后台运行
 		//参数： nochdir:当此参数为0时，会更改创建出的danmon的执行目录为根目录，否则（非0）时保持当前执行目录不变a
 		//noclose：当次函数为0时，会将标准输入(0)，标准输出(1)，标准错误(2)重定向到/dev/null，否则保持原有标准输入(0)，标准输出(1)，标准错误(2)不变
 	}
@@ -126,5 +126,5 @@ daemon_init(const char *pidfile) {
 
 int
 daemon_exit(const char *pidfile) {
-	return unlink(pidfile);
+	return unlink(pidfile); //删除文件目录和链接
 }
