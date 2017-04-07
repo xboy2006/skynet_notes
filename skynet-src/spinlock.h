@@ -8,7 +8,7 @@
 
 #ifndef USE_PTHREAD_LOCK
 
-//原子操作的互斥锁
+//原子操作的自旋锁不会切换线程上下文（睡眠），所以自旋锁的加锁效率要更高，但是也会导致CPU使用率增高
 struct spinlock {
 	int lock;
 };
@@ -20,7 +20,7 @@ spinlock_init(struct spinlock *lock) {
 
 static inline void
 spinlock_lock(struct spinlock *lock) {
-	while (__sync_lock_test_and_set(&lock->lock,1)) {}
+	while (__sync_lock_test_and_set(&lock->lock,1)) {} //__sync_lock_test_and_set原子操作 实现循环检测的自旋锁（spinlock）
 }
 
 static inline int
@@ -46,7 +46,7 @@ spinlock_destroy(struct spinlock *lock) {
 // you can also replace to pthread_spinlock
 
 struct spinlock {
-	pthread_mutex_t lock;//mutex实现的互斥锁
+	pthread_mutex_t lock;//mutex实现的自旋锁
 };
 
 static inline void

@@ -42,36 +42,45 @@
 
 #endif
 
+// skynet 主要功能 加载服务和通知服务
+
+/*
+ * 一个模块(.so)加载到skynet框架中，创建出来的一个实例就是一个服务，
+ * 为每个服务分配一个skynet_context结构
+ */
+
+//每一个服务对应的 skynet_ctx 结构 skynet上下文结构
 struct skynet_context {
-	void * instance;
-	struct skynet_module * mod;
-	void * cb_ud;
-	skynet_cb cb;
-	struct message_queue *queue;
+	void * instance;   //模块实例化句柄 模块xxx_create函数返回的实例 对应 模块的句柄
+	struct skynet_module * mod; //模块结构 保存模块（so）句柄和 函数指针
+	void * cb_ud;   //skynet_callback 设置的服务的lua_state 
+	skynet_cb cb;  //skynet_callback 设置过来的消息处理回调函数 
+	struct message_queue *queue; //消息队列
 	FILE * logfile;
 	uint64_t cpu_cost;	// in microsec
 	uint64_t cpu_start;	// in microsec
-	char result[32];
-	uint32_t handle;
-	int session_id;
-	int ref;
-	int message_count;
-	bool init;
-	bool endless;
-	bool profile;
+	char result[32];    //保存命令执行返回结果
+	uint32_t handle;   //服务的句柄
+	int session_id;    //回话id
+	int ref;           //ref引用计数
+	int message_count; //消息数量
+	bool init;		   //是否实例化
+	bool endless;     //是否进入无尽训话
+	bool profile;   
 
 	CHECKCALLING_DECL
 };
 
+//skynet 节点结构
 struct skynet_node {
-	int total;
+	int total;  //节点服务总数
 	int init;
 	uint32_t monitor_exit;
-	pthread_key_t handle_key;
+	pthread_key_t handle_key; //线程局部存储数据 所有线程都可以使用它，而它的值在每一个线程中又是单独存储的
 	bool profile;	// default is off
 };
 
-static struct skynet_node G_NODE;
+static struct skynet_node G_NODE; //节点结构
 
 int 
 skynet_context_total() {
@@ -80,18 +89,18 @@ skynet_context_total() {
 
 static void
 context_inc() {
-	ATOM_INC(&G_NODE.total);
+	ATOM_INC(&G_NODE.total); //原子操作增加节点数量
 }
 
 static void
 context_dec() {
-	ATOM_DEC(&G_NODE.total);
+	ATOM_DEC(&G_NODE.total); //原子操作减少节点数量
 }
 
 uint32_t 
 skynet_current_handle(void) {
 	if (G_NODE.init) {
-		void * handle = pthread_getspecific(G_NODE.handle_key);
+		void * handle = pthread_getspecific(G_NODE.handle_key); //获取局部存储数据
 		return (uint32_t)(uintptr_t)handle;
 	} else {
 		uint32_t v = (uint32_t)(-THREAD_MAIN);
@@ -104,8 +113,8 @@ id_to_hex(char * str, uint32_t id) {
 	int i;
 	static char hex[16] = { '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F' };
 	str[0] = ':';
-	for (i=0;i<8;i++) {
-		str[i+1] = hex[(id >> ((7-i) * 4))&0xf];
+	for (i=0;i<8;i++) { //转成 16 进制的 0xff ff ff ff 8位
+		str[i+1] = hex[(id >> ((7-i) * 4))&0xf]; //依次取 4位 从最高的4位 开始取 在纸上画一下就清楚了
 	}
 	str[9] = '\0';
 }
@@ -124,19 +133,25 @@ drop_message(struct skynet_message *msg, void *ud) {
 	skynet_send(NULL, source, msg->source, PTYPE_ERROR, 0, NULL, 0);
 }
 
+//创建新的skynet_context结构
 struct skynet_context * 
 skynet_context_new(const char * name, const char *param) {
+	//查询模块数组，找到则直接返回模块结构的指针 没有找到则打开文件进行dlopen加载 同时dlsym找到函数指针 生成skynet_module结构 放入M管理
 	struct skynet_module * mod = skynet_module_query(name);
 
 	if (mod == NULL)
 		return NULL;
 
+	//调用模块的创建函数 xxx_create() 返回实例句柄
 	void *inst = skynet_module_instance_create(mod);
 	if (inst == NULL)
 		return NULL;
+
+	//创建skynet_coontext结构
 	struct skynet_context * ctx = skynet_malloc(sizeof(*ctx));
 	CHECKCALLING_INIT(ctx)
 
+	//填充结构 模块 实例 引用计数
 	ctx->mod = mod;
 	ctx->instance = inst;
 	ctx->ref = 2;
@@ -153,21 +168,26 @@ skynet_context_new(const char * name, const char *param) {
 	ctx->message_count = 0;
 	ctx->profile = G_NODE.profile;
 	// Should set to 0 first to avoid skynet_handle_retireall get an uninitialized handle
-	ctx->handle = 0;	
+	ctx->handle = 0;
+
+	//注册ctx，将 ctx 存到 handle_storage (M)哈希表中，并得到一个handle	
 	ctx->handle = skynet_handle_register(ctx);
+
+	//创建skynet_context中的消息队列 服务句柄会放在消息队列中
 	struct message_queue * queue = ctx->queue = skynet_mq_create(ctx->handle);
 	// init function maybe use ctx->handle, so it must init at last
 	context_inc();
 
+	//模块初始化 xxx_init()
 	CHECKCALLING_BEGIN(ctx)
-	int r = skynet_module_instance_init(mod, inst, ctx, param);
+	int r = skynet_module_instance_init(mod, inst, ctx, param);// 实例化 '_init' 函数
 	CHECKCALLING_END(ctx)
 	if (r == 0) {
-		struct skynet_context * ret = skynet_context_release(ctx);
+		struct skynet_context * ret = skynet_context_release(ctx); //实例化 '_release' 函数 引用计数减少
 		if (ret) {
-			ctx->init = true;
+			ctx->init = true;// 实例化 '_init' 成功
 		}
-		skynet_globalmq_push(queue);
+		skynet_globalmq_push(queue); // 强行压入消息队列
 		if (ret) {
 			skynet_error(ret, "LAUNCH %s %s", name, param ? param : "");
 		}
@@ -183,6 +203,7 @@ skynet_context_new(const char * name, const char *param) {
 	}
 }
 
+//新会话 在skynet_context.session_id上累加
 int
 skynet_context_newsession(struct skynet_context *ctx) {
 	// session always be a positive number
@@ -194,6 +215,7 @@ skynet_context_newsession(struct skynet_context *ctx) {
 	return session;
 }
 
+//获取skynet_context 添加引用计数
 void 
 skynet_context_grab(struct skynet_context *ctx) {
 	ATOM_INC(&ctx->ref);
@@ -201,27 +223,27 @@ skynet_context_grab(struct skynet_context *ctx) {
 
 void
 skynet_context_reserve(struct skynet_context *ctx) {
-	skynet_context_grab(ctx);
+	skynet_context_grab(ctx); //减少引用计数
 	// don't count the context reserved, because skynet abort (the worker threads terminate) only when the total context is 0 .
 	// the reserved context will be release at last.
-	context_dec();
+	context_dec(); //减少服务数量
 }
 
 static void 
 delete_context(struct skynet_context *ctx) {
 	if (ctx->logfile) {
-		fclose(ctx->logfile);
+		fclose(ctx->logfile); //关闭日志文件
 	}
-	skynet_module_instance_release(ctx->mod, ctx->instance);
-	skynet_mq_mark_release(ctx->queue);
+	skynet_module_instance_release(ctx->mod, ctx->instance); //xxx_release
+	skynet_mq_mark_release(ctx->queue); //标记消息队列删除
 	CHECKCALLING_DESTROY(ctx)
-	skynet_free(ctx);
-	context_dec();
+	skynet_free(ctx); //释放ctx
+	context_dec(); //减少服务数量
 }
 
 struct skynet_context * 
 skynet_context_release(struct skynet_context *ctx) {
-	if (ATOM_DEC(&ctx->ref) == 0) {
+	if (ATOM_DEC(&ctx->ref) == 0) { //减少引用计数 引用计数为0删除ctx
 		delete_context(ctx);
 		return NULL;
 	}
@@ -230,19 +252,19 @@ skynet_context_release(struct skynet_context *ctx) {
 
 int
 skynet_context_push(uint32_t handle, struct skynet_message *message) {
-	struct skynet_context * ctx = skynet_handle_grab(handle);
+	struct skynet_context * ctx = skynet_handle_grab(handle); //通过handle找到H中保存的skynet_context ref+1
 	if (ctx == NULL) {
 		return -1;
 	}
-	skynet_mq_push(ctx->queue, message);
-	skynet_context_release(ctx);
+	skynet_mq_push(ctx->queue, message); //将消息放入ctx的消息队列中
+	skynet_context_release(ctx); //ref -1
 
 	return 0;
 }
 
 void 
 skynet_context_endless(uint32_t handle) {
-	struct skynet_context * ctx = skynet_handle_grab(handle);
+	struct skynet_context * ctx = skynet_handle_grab(handle); //将服务标记为无尽循环状态
 	if (ctx == NULL) {
 		return;
 	}
@@ -252,9 +274,9 @@ skynet_context_endless(uint32_t handle) {
 
 int 
 skynet_isremote(struct skynet_context * ctx, uint32_t handle, int * harbor) {
-	int ret = skynet_harbor_message_isremote(handle);
+	int ret = skynet_harbor_message_isremote(handle); // 判断是否是远程消息
 	if (harbor) {
-		*harbor = (int)(handle >> HANDLE_REMOTE_SHIFT);
+		*harbor = (int)(handle >> HANDLE_REMOTE_SHIFT); //返回harbor(注：高8位存的是harbor) yes
 	}
 	return ret;
 }
