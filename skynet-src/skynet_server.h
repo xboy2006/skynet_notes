@@ -3,10 +3,11 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+//Skynet主要功能，初始化组件、加载服务和通知服务
 
-struct skynet_context;
-struct skynet_message;
-struct skynet_monitor;
+struct skynet_context;  //每一个服务对应的 skynet_ctx 结构 skynet上下文结构
+struct skynet_message;  //skynet 内部消息结构
+struct skynet_monitor;  /// 监视的结构
 
 struct skynet_context * skynet_context_new(const char * name, const char * parm);
 void skynet_context_grab(struct skynet_context *);
@@ -22,7 +23,7 @@ void skynet_context_dispatchall(struct skynet_context * context);	// for skynet_
 
 void skynet_context_endless(uint32_t handle);	// for monitor
 
-void skynet_globalinit(void);
+void skynet_globalinit(void); //初始化节点结构skynet_node G_NODE
 void skynet_globalexit(void);
 void skynet_initthread(int m);
 

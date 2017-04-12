@@ -250,6 +250,7 @@ skynet_context_release(struct skynet_context *ctx) {
 	return ctx;
 }
 
+//往handle标识的服务中插入一条消息
 int
 skynet_context_push(uint32_t handle, struct skynet_message *message) {
 	struct skynet_context * ctx = skynet_handle_grab(handle); //通过handle找到H中保存的skynet_context ref+1
@@ -281,6 +282,7 @@ skynet_isremote(struct skynet_context * ctx, uint32_t handle, int * harbor) {
 	return ret;
 }
 
+//消息调度
 static void
 dispatch_message(struct skynet_context *ctx, struct skynet_message *msg) {
 	assert(ctx->init);
@@ -293,7 +295,7 @@ dispatch_message(struct skynet_context *ctx, struct skynet_message *msg) {
 	}
 	++ctx->message_count;
 	int reserve_msg;
-	if (ctx->profile) {
+	if (ctx->profile) { //有性能开关 则计时处理  调度执行服务模块中的回调函数
 		ctx->cpu_start = skynet_thread_time();
 		reserve_msg = ctx->cb(ctx, ctx->cb_ud, type, msg->session, msg->source, msg->data, sz);
 		uint64_t cost_time = skynet_thread_time() - ctx->cpu_start;
@@ -302,7 +304,7 @@ dispatch_message(struct skynet_context *ctx, struct skynet_message *msg) {
 		reserve_msg = ctx->cb(ctx, ctx->cb_ud, type, msg->session, msg->source, msg->data, sz);
 	}
 	if (!reserve_msg) {
-		skynet_free(msg->data);
+		skynet_free(msg->data); //释放数据
 	}
 	CHECKCALLING_END(ctx)
 }
@@ -317,17 +319,18 @@ skynet_context_dispatchall(struct skynet_context * ctx) {
 	}
 }
 
+//消息调度
 struct message_queue * 
 skynet_context_message_dispatch(struct skynet_monitor *sm, struct message_queue *q, int weight) {
 	if (q == NULL) {
-		q = skynet_globalmq_pop();
+		q = skynet_globalmq_pop(); //全局消息列表队列中弹出一个消息队列
 		if (q==NULL)
 			return NULL;
 	}
 
-	uint32_t handle = skynet_mq_handle(q);
+	uint32_t handle = skynet_mq_handle(q); //得到消息队列所属的服务句柄
 
-	struct skynet_context * ctx = skynet_handle_grab(handle);
+	struct skynet_context * ctx = skynet_handle_grab(handle); //根据handle获取skynet_context handle_storage *H 管理中获取
 	if (ctx == NULL) {
 		struct drop_t d = { handle };
 		skynet_mq_release(q, drop_message, &d);
@@ -338,11 +341,11 @@ skynet_context_message_dispatch(struct skynet_monitor *sm, struct message_queue 
 	struct skynet_message msg;
 
 	for (i=0;i<n;i++) {
-		if (skynet_mq_pop(q,&msg)) {
-			skynet_context_release(ctx);
+		if (skynet_mq_pop(q,&msg)) { //从消息队列q中取出取消息msg
+			skynet_context_release(ctx); //返回1说明消息队列中已经没有消息 释放 Context 结构
 			return skynet_globalmq_pop();
 		} else if (i==0 && weight >= 0) {
-			n = skynet_mq_length(q);
+			n = skynet_mq_length(q); //获取消息的长度
 			n >>= weight;
 		}
 		int overload = skynet_mq_overload(q);
@@ -350,12 +353,12 @@ skynet_context_message_dispatch(struct skynet_monitor *sm, struct message_queue 
 			skynet_error(ctx, "May overload, message queue length = %d", overload);
 		}
 
-		skynet_monitor_trigger(sm, msg.source , handle);
+		skynet_monitor_trigger(sm, msg.source , handle); // 消息处理完，调用该函数，以便监控线程知道该消息已处理
 
 		if (ctx->cb == NULL) {
-			skynet_free(msg.data);
+			skynet_free(msg.data); //释放数据
 		} else {
-			dispatch_message(ctx, &msg);
+			dispatch_message(ctx, &msg); //调度消息
 		}
 
 		skynet_monitor_trigger(sm, 0,0);
@@ -814,7 +817,7 @@ skynet_context_send(struct skynet_context * ctx, void * msg, size_t sz, uint32_t
 }
 
 void 
-skynet_globalinit(void) {
+skynet_globalinit(void) { //初始化skynet_node 创建线程局部存储key
 	G_NODE.total = 0;
 	G_NODE.monitor_exit = 0;
 	G_NODE.init = 1;
@@ -828,11 +831,11 @@ skynet_globalinit(void) {
 
 void 
 skynet_globalexit(void) {
-	pthread_key_delete(G_NODE.handle_key);
+	pthread_key_delete(G_NODE.handle_key); //删除线程局部存储的key
 }
 
 void
-skynet_initthread(int m) {
+skynet_initthread(int m) { //设置线程局部存储key
 	uintptr_t v = (uint32_t)(-m);
 	pthread_setspecific(G_NODE.handle_key, (void *)v);
 }
