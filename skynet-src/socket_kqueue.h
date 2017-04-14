@@ -10,6 +10,9 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+//free bsd 上实现的一种io多路复用技术 
+//epoll和kqueue的比较:非文件类型支持 磁盘文件支持
+
 static bool 
 sp_invalid(int kfd) {
 	return kfd == -1;

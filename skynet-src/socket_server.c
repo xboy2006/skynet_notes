@@ -19,19 +19,19 @@
 #define MAX_INFO 128
 // MAX_SOCKET will be 2^MAX_SOCKET_P
 #define MAX_SOCKET_P 16
-#define MAX_EVENT 64
-#define MIN_READ_BUFFER 64
-#define SOCKET_TYPE_INVALID 0
-#define SOCKET_TYPE_RESERVE 1
-#define SOCKET_TYPE_PLISTEN 2
-#define SOCKET_TYPE_LISTEN 3
-#define SOCKET_TYPE_CONNECTING 4
-#define SOCKET_TYPE_CONNECTED 5
-#define SOCKET_TYPE_HALFCLOSE 6
-#define SOCKET_TYPE_PACCEPT 7
-#define SOCKET_TYPE_BIND 8
+#define MAX_EVENT 64    // 用于epoll_wait的第三个参数 每次返回事件的多少
+#define MIN_READ_BUFFER 64 // 最小分配的读缓冲大小 为了减少read的调用 尽可能分配大的读缓冲区
+#define SOCKET_TYPE_INVALID 0   // 无效的sock fe
+#define SOCKET_TYPE_RESERVE 1   // 预留已经被申请 即将被使用
+#define SOCKET_TYPE_PLISTEN 2   // listen fd但是未加入epoll管理
+#define SOCKET_TYPE_LISTEN 3    // 监听到套接字已经加入epoll管理
+#define SOCKET_TYPE_CONNECTING 4 // 尝试连接的socket fd
+#define SOCKET_TYPE_CONNECTED 5  // 已经建立连接的socket 主动conn或者被动accept的套接字 已经加入epoll管理
+#define SOCKET_TYPE_HALFCLOSE 6   // 已经在应用层关闭了fd 但是数据还没有发送完 还没有close
+#define SOCKET_TYPE_PACCEPT 7  // accept返回的fd 未加入epoll
+#define SOCKET_TYPE_BIND 8  // 其他类型的fd 如 stdin stdout等
 
-#define MAX_SOCKET (1<<MAX_SOCKET_P)
+#define MAX_SOCKET (1<<MAX_SOCKET_P) // 1 << 16 -> 64K
 
 #define PRIORITY_HIGH 0
 #define PRIORITY_LOW 1
@@ -53,6 +53,7 @@
 #define AGAIN_WOULDBLOCK EAGAIN
 #endif
 
+// 发送缓冲区构成一个链表
 struct write_buffer {
 	struct write_buffer * next;
 	void *buffer;
@@ -70,36 +71,39 @@ struct wb_list {
 	struct write_buffer * tail;
 };
 
+// 应用层的socket
 struct socket {
-	uintptr_t opaque;
-	struct wb_list high;
+	uintptr_t opaque;     // 在skynet中用于保存服务的handle
+	struct wb_list high;  // 发送缓冲区链表头指针和尾指针
 	struct wb_list low;
-	int64_t wb_size;
-	int fd;
-	int id;
+	int64_t wb_size;      // 发送缓冲区未发送的数据
+	int fd;               // 对应内核分配的fd
+	int id;               // 应用层维护的一个与fd对应的id 实际上是在socket池中的id
 	uint16_t protocol;
-	uint16_t type;
+	uint16_t type;       // socket类型或者状态
 	union {
-		int size;
+		int size;        // 下一次read操作要分配的缓冲区大小
 		uint8_t udp_address[UDP_ADDRESS_SIZE];
 	} p;
 };
 
 struct socket_server {
-	int recvctrl_fd;
-	int sendctrl_fd;
-	int checkctrl;
-	poll_fd event_fd;
-	int alloc_id;
-	int event_n;
-	int event_index;
+	int recvctrl_fd;     // 管道读端
+	int sendctrl_fd;     // 管道写端
+	int checkctrl;       // 释放检测命令
+	poll_fd event_fd;    // epoll fd
+	int alloc_id;        // 应用层分配id 用的
+	int event_n;         // epoll_wait 返回的事件数
+	int event_index;     // 当前处理的事件序号
 	struct socket_object_interface soi;
-	struct event ev[MAX_EVENT];
-	struct socket slot[MAX_SOCKET];
-	char buffer[MAX_INFO];
+	struct event ev[MAX_EVENT];      // epoll_wait返回的事件集
+	struct socket slot[MAX_SOCKET];  // 应用层预先分配的socket
+	char buffer[MAX_INFO];           // 临时数据的保存 比如保存对等方的地址信息等
 	uint8_t udpbuffer[MAX_UDP_PACKAGE];
-	fd_set rfds;
+	fd_set rfds;                     // 用于select的fd集
 };
+
+// 以下6个结构用于控制包体结构
 
 struct request_open {
 	int id;
@@ -177,9 +181,9 @@ struct request_udp {
 	U Create UDP socket
 	C set udp address
  */
-
+// 控制命令请求包
 struct request_package {
-	uint8_t header[8];	// 6 bytes dummy
+	uint8_t header[8];	// 6 bytes dummy  // 6 bytes dummy 6个字节未用 [0-5] [6]是type [7]长度 长度指的是包体的长度
 	union {
 		char buffer[256];
 		struct request_open open;
@@ -242,6 +246,8 @@ socket_keepalive(int fd) {
 	setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, (void *)&keepalive , sizeof(keepalive));  
 }
 
+// 从socket池中获取一个空的socket 并为其分配一个id 2^31-1
+// 在socket池中的位置 池的大小是64K socket_id的范围远大与64K
 static int
 reserve_id(struct socket_server *ss) {
 	int i;

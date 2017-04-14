@@ -29,7 +29,7 @@ skynet_socket_free() {
 	SOCKET_SERVER = NULL;
 }
 
-// mainloop thread
+// mainloop thread 将数据压入相应服务的消息队列
 static void
 forward_message(int type, bool padding, struct socket_message * result) {
 	struct skynet_socket_message *sm;
@@ -59,7 +59,7 @@ forward_message(int type, bool padding, struct socket_message * result) {
 	struct skynet_message message;
 	message.source = 0;
 	message.session = 0;
-	message.data = sm;
+	message.data = sm; //数据为 skynet_socket_message
 	message.sz = sz | ((size_t)PTYPE_SOCKET << MESSAGE_TYPE_SHIFT);
 	
 	if (skynet_context_push((uint32_t)result->opaque, &message)) {
@@ -70,13 +70,15 @@ forward_message(int type, bool padding, struct socket_message * result) {
 	}
 }
 
+
+//检查socket事件 并且做转发
 int 
 skynet_socket_poll() {
 	struct socket_server *ss = SOCKET_SERVER;
 	assert(ss);
 	struct socket_message result;
 	int more = 1;
-	int type = socket_server_poll(ss, &result, &more);
+	int type = socket_server_poll(ss, &result, &more); //检测socket事件 
 	switch (type) {
 	case SOCKET_EXIT:
 		return 0;
