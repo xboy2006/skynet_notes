@@ -425,7 +425,7 @@ static const char *
 cmd_timeout(struct skynet_context * context, const char * param) {
 	char * session_ptr = NULL;
 	int ti = strtol(param, &session_ptr, 10);
-	int session = skynet_context_newsession(context);
+	int session = skynet_context_newsession(context); // new session_id
 	skynet_timeout(context->handle, ti, session);
 	sprintf(context->result, "%d", session);
 	return context->result;
@@ -437,7 +437,7 @@ cmd_reg(struct skynet_context * context, const char * param) {
 		sprintf(context->result, ":%x", context->handle);
 		return context->result;
 	} else if (param[0] == '.') {
-		return skynet_handle_namehandle(context->handle, param + 1);
+		return skynet_handle_namehandle(context->handle, param + 1); //给服务注册一个名称
 	} else {
 		skynet_error(context, "Can't register global name %s in C", param);
 		return NULL;
@@ -512,14 +512,14 @@ cmd_launch(struct skynet_context * context, const char * param) {
 	char tmp[sz+1];
 	strcpy(tmp,param);
 	char * args = tmp;
-	char * mod = strsep(&args, " \t\r\n");
-	args = strsep(&args, "\r\n");
-	struct skynet_context * inst = skynet_context_new(mod,args);
+	char * mod = strsep(&args, " \t\r\n"); 
+	args = strsep(&args, "\r\n");// strsep() 分解字符串为一组字符串
+	struct skynet_context * inst = skynet_context_new(mod,args); // 新的skynet_ctx 内部会初始化这个服务module 启动mod这个服务 创建skynet_context
 	if (inst == NULL) {
 		return NULL;
 	} else {
-		id_to_hex(context->result, inst->handle);
-		return context->result;
+		id_to_hex(context->result, inst->handle);// 将 handle 转行成16进制的形式
+		return context->result; //将结果放在当前skynet_context的result字段
 	}
 }
 
@@ -689,6 +689,14 @@ static struct command_func cmd_funcs[] = {
 	{ NULL, NULL },
 };
 
+// 使用了简单的文本协议 来 cmd 操作 skynet的服务
+/*
+ * skynet 提供了一个叫做 skynet_command 的 C API ，作为基础服务的统一入口。
+ * 它接收一个字符串参数，返回一个字符串结果。你可以看成是一种文本协议。
+ * 但 skynet_command 保证在调用过程中，不会切出当前的服务线程，导致状态改变的不可预知性。
+ * 其每个功能的实现，其实也是内嵌在 skynet 的源代码中，相同上层服务，还是比较高效的。
+ *（因为可以访问许多内存 api ，而不必用消息通讯的方式实现）
+ */
 const char * 
 skynet_command(struct skynet_context * context, const char * cmd , const char * param) {
 	struct command_func * method = &cmd_funcs[0];
@@ -723,6 +731,11 @@ _filter_args(struct skynet_context * context, int type, int *session, void ** da
 	*sz |= (size_t)type << MESSAGE_TYPE_SHIFT;
 }
 
+/*
+ * 向handle为destination的服务发送消息(注：handle为destination的服务不一定是本地的)
+ * type中含有 PTYPE_TAG_ALLOCSESSION ，则session必须是0
+ * type中含有 PTYPE_TAG_DONTCOPY ，则不需要拷贝数据
+ */
 int
 skynet_send(struct skynet_context * context, uint32_t source, uint32_t destination , int type, int session, void * data, size_t sz) {
 	if ((sz & MESSAGE_TYPE_MASK) != sz) {
@@ -741,14 +754,14 @@ skynet_send(struct skynet_context * context, uint32_t source, uint32_t destinati
 	if (destination == 0) {
 		return session;
 	}
-	if (skynet_harbor_message_isremote(destination)) {
+	if (skynet_harbor_message_isremote(destination)) { //destination是否远程消息
 		struct remote_message * rmsg = skynet_malloc(sizeof(*rmsg));
 		rmsg->destination.handle = destination;
 		rmsg->message = data;
 		rmsg->sz = sz;
-		skynet_harbor_send(rmsg, source, session);
+		skynet_harbor_send(rmsg, source, session); //将消息发送到harbar 有barbor发送到其他远程节点
 	} else {
-		struct skynet_message smsg;
+		struct skynet_message smsg;  //本机消息直接压入对应的消息队列
 		smsg.source = source;
 		smsg.session = session;
 		smsg.data = data;
@@ -805,15 +818,16 @@ skynet_callback(struct skynet_context * context, void *ud, skynet_cb cb) {
 	context->cb_ud = ud;
 }
 
+//向本地ctx服务发送一条消息
 void
 skynet_context_send(struct skynet_context * ctx, void * msg, size_t sz, uint32_t source, int type, int session) {
 	struct skynet_message smsg;
 	smsg.source = source;
 	smsg.session = session;
 	smsg.data = msg;
-	smsg.sz = sz | (size_t)type << MESSAGE_TYPE_SHIFT;
+	smsg.sz = sz | (size_t)type << MESSAGE_TYPE_SHIFT; //
 
-	skynet_mq_push(ctx->queue, &smsg);
+	skynet_mq_push(ctx->queue, &smsg); //压入消息队列
 }
 
 void 

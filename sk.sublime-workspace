@@ -103,6 +103,193 @@
 	},
 	"buffers":
 	[
+		{
+			"file": "skynet-src/skynet_daemon.c",
+			"settings":
+			{
+				"buffer_size": 2567,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "skynet-src/skynet_handle.c",
+			"settings":
+			{
+				"buffer_size": 6659,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "skynet-src/skynet_harbor.h",
+			"settings":
+			{
+				"buffer_size": 628,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "skynet-src/skynet_harbor.c",
+			"settings":
+			{
+				"buffer_size": 1747,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "skynet-src/skynet_imp.h",
+			"settings":
+			{
+				"buffer_size": 558,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "skynet-src/skynet_monitor.h",
+			"settings":
+			{
+				"buffer_size": 390,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "skynet-src/skynet_monitor.c",
+			"settings":
+			{
+				"buffer_size": 1231,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "skynet-src/skynet_server.c",
+			"settings":
+			{
+				"buffer_size": 20725,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "skynet-src/skynet_module.c",
+			"settings":
+			{
+				"buffer_size": 4061,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "skynet-src/skynet_module.h",
+			"settings":
+			{
+				"buffer_size": 1189,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"contents": "#ifndef SKYNET_SERVER_H\n#define SKYNET_SERVER_H\n\n#include <stdint.h>\n#include <stdlib.h>\n\nstruct skynet_context; //skynet上下文\nstruct skynet_message;\nstruct skynet_monitor;\n\nstruct skynet_context * skynet_context_new(const char * name, const char * parm);\nvoid skynet_context_grab(struct skynet_context *);\nvoid skynet_context_reserve(struct skynet_context *ctx);\nstruct skynet_context * skynet_context_release(struct skynet_context *);\nuint32_t skynet_context_handle(struct skynet_context *);\nint skynet_context_push(uint32_t handle, struct skynet_message *message);\nvoid skynet_context_send(struct skynet_context * context, void * msg, size_t sz, uint32_t source, int type, int session);\nint skynet_context_newsession(struct skynet_context *);\nstruct message_queue * skynet_context_message_dispatch(struct skynet_monitor *, struct message_queue *, int weight);\t// return next queue\nint skynet_context_total();\nvoid skynet_context_dispatchall(struct skynet_context * context);\t// for skynet_error output before exit\n\nvoid skynet_context_endless(uint32_t handle);\t// for monitor\n\nvoid skynet_globalinit(void);\nvoid skynet_globalexit(void);\nvoid skynet_initthread(int m);\n\nvoid skynet_profile_enable(int enable);\n\n#endif\n",
+			"file": "skynet-src/skynet_server.h",
+			"file_size": 1206,
+			"file_write_time": 131279003490000000,
+			"settings":
+			{
+				"buffer_size": 1218,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "service-src/service_gate.c",
+			"settings":
+			{
+				"buffer_size": 9594,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "service-src/service_harbor.c",
+			"settings":
+			{
+				"buffer_size": 18487,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"contents": "#include \"skynet.h\"\n\n#include <lua.h>\n#include <lualib.h>\n#include <lauxlib.h>\n\n#include <assert.h>\n#include <string.h>\n#include <stdlib.h>\n#include <stdio.h>\n\n//加载lua编写的服务。核心服务。\n\n#define MEMORY_WARNING_REPORT (1024 * 1024 * 32)\n\nstruct snlua {\n\tlua_State * L;\n\tstruct skynet_context * ctx;\n\tsize_t mem;\n\tsize_t mem_report;\n\tsize_t mem_limit;\n};\n\n// LUA_CACHELIB may defined in patched lua for shared proto\n#ifdef LUA_CACHELIB\n\n#define codecache luaopen_cache\n\n#else\n\nstatic int\ncleardummy(lua_State *L) {\n  return 0;\n}\n\nstatic int \ncodecache(lua_State *L) {\n\tluaL_Reg l[] = {\n\t\t{ \"clear\", cleardummy },\n\t\t{ \"mode\", cleardummy },\n\t\t{ NULL, NULL },\n\t};\n\tluaL_newlib(L,l);\n\tlua_getglobal(L, \"loadfile\");\n\tlua_setfield(L, -2, \"loadfile\");\n\treturn 1;\n}\n\n#endif\n\nstatic int \ntraceback (lua_State *L) {\n\tconst char *msg = lua_tostring(L, 1);\n\tif (msg)\n\t\tluaL_traceback(L, L, msg, 1);\n\telse {\n\t\tlua_pushliteral(L, \"(no error message)\");\n\t}\n\treturn 1;\n}\n\nstatic void\nreport_launcher_error(struct skynet_context *ctx) {\n\t// sizeof \"ERROR\" == 5\n\tskynet_sendname(ctx, 0, \".launcher\", PTYPE_TEXT, 0, \"ERROR\", 5);\n}\n\nstatic const char *\noptstring(struct skynet_context *ctx, const char *key, const char * str) {\n\tconst char * ret = skynet_command(ctx, \"GETENV\", key);\n\tif (ret == NULL) {\n\t\treturn str;\n\t}\n\treturn ret;\n}\n\nstatic int\ninit_cb(struct snlua *l, struct skynet_context *ctx, const char * args, size_t sz) {\n\tlua_State *L = l->L;\n\tl->ctx = ctx;\n\tlua_gc(L, LUA_GCSTOP, 0);\n\tlua_pushboolean(L, 1);  /* signal for libraries to ignore env. vars. */\n\tlua_setfield(L, LUA_REGISTRYINDEX, \"LUA_NOENV\");\n\tluaL_openlibs(L);\n\tlua_pushlightuserdata(L, ctx);\n\tlua_setfield(L, LUA_REGISTRYINDEX, \"skynet_context\");\n\tluaL_requiref(L, \"skynet.codecache\", codecache , 0);\n\tlua_pop(L,1);\n\n\tconst char *path = optstring(ctx, \"lua_path\",\"./lualib/?.lua;./lualib/?/init.lua\");\n\tlua_pushstring(L, path);\n\tlua_setglobal(L, \"LUA_PATH\");\n\tconst char *cpath = optstring(ctx, \"lua_cpath\",\"./luaclib/?.so\");\n\tlua_pushstring(L, cpath);\n\tlua_setglobal(L, \"LUA_CPATH\");\n\tconst char *service = optstring(ctx, \"luaservice\", \"./service/?.lua\");\n\tlua_pushstring(L, service);\n\tlua_setglobal(L, \"LUA_SERVICE\");\n\tconst char *preload = skynet_command(ctx, \"GETENV\", \"preload\");\n\tlua_pushstring(L, preload);\n\tlua_setglobal(L, \"LUA_PRELOAD\");\n\n\tlua_pushcfunction(L, traceback);\n\tassert(lua_gettop(L) == 1);\n\n\tconst char * loader = optstring(ctx, \"lualoader\", \"./lualib/loader.lua\");\n\n\tint r = luaL_loadfile(L,loader);\n\tif (r != LUA_OK) {\n\t\tskynet_error(ctx, \"Can't load %s : %s\", loader, lua_tostring(L, -1));\n\t\treport_launcher_error(ctx);\n\t\treturn 1;\n\t}\n\tlua_pushlstring(L, args, sz);\n\tr = lua_pcall(L,1,0,1);\n\tif (r != LUA_OK) {\n\t\tskynet_error(ctx, \"lua loader error : %s\", lua_tostring(L, -1));\n\t\treport_launcher_error(ctx);\n\t\treturn 1;\n\t}\n\tlua_settop(L,0);\n\tif (lua_getfield(L, LUA_REGISTRYINDEX, \"memlimit\") == LUA_TNUMBER) {\n\t\tsize_t limit = lua_tointeger(L, -1);\n\t\tl->mem_limit = limit;\n\t\tskynet_error(ctx, \"Set memory limit to %.2f M\", (float)limit / (1024 * 1024));\n\t\tlua_pushnil(L);\n\t\tlua_setfield(L, LUA_REGISTRYINDEX, \"memlimit\");\n\t}\n\tlua_pop(L, 1);\n\n\tlua_gc(L, LUA_GCRESTART, 0);\n\n\treturn 0;\n}\n\nstatic int\nlaunch_cb(struct skynet_context * context, void *ud, int type, int session, uint32_t source , const void * msg, size_t sz) {\n\tassert(type == 0 && session == 0);\n\tstruct snlua *l = ud;\n\tskynet_callback(context, NULL, NULL);\n\tint err = init_cb(l, context, msg, sz);\n\tif (err) {\n\t\tskynet_command(context, \"EXIT\", NULL);\n\t}\n\n\treturn 0;\n}\n\nint\nsnlua_init(struct snlua *l, struct skynet_context *ctx, const char * args) {\n\tint sz = strlen(args);\n\tchar * tmp = skynet_malloc(sz);\n\tmemcpy(tmp, args, sz);\n\tskynet_callback(ctx, l , launch_cb);\n\tconst char * self = skynet_command(ctx, \"REG\", NULL);\n\tuint32_t handle_id = strtoul(self+1, NULL, 16);\n\t// it must be first message\n\tskynet_send(ctx, 0, handle_id, PTYPE_TAG_DONTCOPY,0, tmp, sz);\n\treturn 0;\n}\n\nstatic void *\nlalloc(void * ud, void *ptr, size_t osize, size_t nsize) {\n\tstruct snlua *l = ud;\n\tsize_t mem = l->mem;\n\tl->mem += nsize;\n\tif (ptr)\n\t\tl->mem -= osize;\n\tif (l->mem_limit != 0 && l->mem > l->mem_limit) {\n\t\tif (ptr == NULL || nsize > osize) {\n\t\t\tl->mem = mem;\n\t\t\treturn NULL;\n\t\t}\n\t}\n\tif (l->mem > l->mem_report) {\n\t\tl->mem_report *= 2;\n\t\tskynet_error(l->ctx, \"Memory warning %.2f M\", (float)l->mem / (1024 * 1024));\n\t}\n\treturn skynet_lalloc(ptr, osize, nsize);\n}\n\nstruct snlua *\nsnlua_create(void) {\n\tstruct snlua * l = skynet_malloc(sizeof(*l));\n\tmemset(l,0,sizeof(*l));\n\tl->mem_report = MEMORY_WARNING_REPORT;\n\tl->mem_limit = 0;\n\tl->L = lua_newstate(lalloc, l);\n\treturn l;\n}\n\nvoid\nsnlua_release(struct snlua *l) {\n\tlua_close(l->L);\n\tskynet_free(l);\n}\n\nvoid\nsnlua_signal(struct snlua *l, int signal) {\n\tskynet_error(l->ctx, \"recv a signal %d\", signal);\n\tif (signal == 0) {\n#ifdef lua_checksig\n\t// If our lua support signal (modified lua version by skynet), trigger it.\n\tskynet_sig_L = l->L;\n#endif\n\t} else if (signal == 1) {\n\t\tskynet_error(l->ctx, \"Current Memory %.3fK\", (float)l->mem / 1024);\n\t}\n}\n",
+			"file": "service-src/service_snlua.c",
+			"file_size": 5012,
+			"file_write_time": 131279003490000000,
+			"settings":
+			{
+				"buffer_size": 5032,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "lualib-src/lua-skynet.c",
+			"settings":
+			{
+				"buffer_size": 9371,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "service/cmaster.lua",
+			"settings":
+			{
+				"buffer_size": 3256,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "skynet-src/spinlock.h",
+			"settings":
+			{
+				"buffer_size": 1611,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"contents": "Searching 492 files for \"MESSAGE_TYPE_MASK\"\n\nD:\\share_code\\skynet_notes\\skynet-src\\skynet_harbor.c:\n   15  skynet_harbor_send(struct remote_message *rmsg, uint32_t source, int session) {\n   16  \tint type = rmsg->sz >> MESSAGE_TYPE_SHIFT;\n   17: \trmsg->sz &= MESSAGE_TYPE_MASK;\n   18  \tassert(type != PTYPE_SYSTEM && type != PTYPE_HARBOR && REMOTE);\n   19  \tskynet_context_send(REMOTE, rmsg, sizeof(*rmsg) , source, type , session);\n\nD:\\share_code\\skynet_notes\\skynet-src\\skynet_mq.h:\n   13  \n   14  // type is encoding in skynet_message.sz high 8bit\n   15: #define MESSAGE_TYPE_MASK (SIZE_MAX >> 8)\n   16  #define MESSAGE_TYPE_SHIFT ((sizeof(size_t)-1) * 8)\n   17  \n\nD:\\share_code\\skynet_notes\\skynet-src\\skynet_server.c:\n  264  \tpthread_setspecific(G_NODE.handle_key, (void *)(uintptr_t)(ctx->handle));\n  265  \tint type = msg->sz >> MESSAGE_TYPE_SHIFT;\n  266: \tsize_t sz = msg->sz & MESSAGE_TYPE_MASK;\n  267  \tif (ctx->logfile) {\n  268  \t\tskynet_log_output(ctx->logfile, msg->source, type, msg->session, msg->data, sz);\n  ...\n  699  int\n  700  skynet_send(struct skynet_context * context, uint32_t source, uint32_t destination , int type, int session, void * data, size_t sz) {\n  701: \tif ((sz & MESSAGE_TYPE_MASK) != sz) {\n  702  \t\tskynet_error(context, \"The message to %x is too large\", destination);\n  703  \t\tif (type & PTYPE_TAG_DONTCOPY) {\n\n4 matches across 3 files\n",
+			"settings":
+			{
+				"buffer_size": 1372,
+				"line_ending": "Windows",
+				"name": "Find Results",
+				"scratch": true
+			}
+		},
+		{
+			"file": "skynet-src/skynet_mq.h",
+			"settings":
+			{
+				"buffer_size": 1298,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"contents": "#include \"skynet.h\"\n#include \"skynet_mq.h\"\n#include \"skynet_handle.h\"\n#include \"spinlock.h\"\n\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <assert.h>\n#include <stdbool.h>\n\n#define DEFAULT_QUEUE_SIZE 64   //默认队列大小\n#define MAX_GLOBAL_MQ 0x10000  //最大的全局消息队列的大小 64K\n\n// 0 means mq is not in global mq.\n// 1 means mq is in global mq , or the message is dispatching.\n\n#define MQ_IN_GLOBAL 1   //在全局队列中或者正在分发\n#define MQ_OVERLOAD 1024\n\n//消息队列结构\nstruct message_queue {\n\tstruct spinlock lock;\n\tuint32_t handle;  //对应服务的handle，可以通过它找到对应服务的skynet_context。\n\tint cap;          //队列大小\n\tint head;         //队列头\n\tint tail;         //队列尾\n\tint release;      //释放\n\tint in_global;    //全局队列\n\tint overload;\n\tint overload_threshold;\n\tstruct skynet_message *queue; //存放具体消息的连续内存的指针\n\tstruct message_queue *next;  //下一个队列的指针\n};\n\n//全局消息队列链表 其中保存了非空的各个服务的消息队列message_queue\nstruct global_queue {\n\tstruct message_queue *head;\n\tstruct message_queue *tail;\n\tstruct spinlock lock;\n};\n\nstatic struct global_queue *Q = NULL; //全局队列的指针变量\n\n//消息队列挂在全局消息链表的尾部\nvoid \nskynet_globalmq_push(struct message_queue * queue) {\n\tstruct global_queue *q= Q;\n\n\tSPIN_LOCK(q)\n\tassert(queue->next == NULL);\n\tif(q->tail) {\n\t\tq->tail->next = queue;\n\t\tq->tail = queue;\n\t} else {\n\t\tq->head = q->tail = queue;\n\t}\n\tSPIN_UNLOCK(q)\n}\n\n//取出全局消息队列链表头部的消息队列\nstruct message_queue * \nskynet_globalmq_pop() {\n\tstruct global_queue *q = Q;\n\n\tSPIN_LOCK(q)\n\tstruct message_queue *mq = q->head;\n\tif(mq) {\n\t\tq->head = mq->next;\n\t\tif(q->head == NULL) {\n\t\t\tassert(mq == q->tail);\n\t\t\tq->tail = NULL;\n\t\t}\n\t\tmq->next = NULL;\n\t}\n\tSPIN_UNLOCK(q)\n\n\treturn mq;\n}\n\n\n//创建消息队列\nstruct message_queue * \nskynet_mq_create(uint32_t handle) {\n\tstruct message_queue *q = skynet_malloc(sizeof(*q)); //创建消息队列\n\tq->handle = handle; //记录handle\n\tq->cap = DEFAULT_QUEUE_SIZE;\n\tq->head = 0;\n\tq->tail = 0;\n\tSPIN_INIT(q)\n\t// When the queue is create (always between service create and service init) ,\n\t// set in_global flag to avoid push it to global queue .\n\t// If the service init success, skynet_context_new will call skynet_mq_push to push it to global queue.\n\tq->in_global = MQ_IN_GLOBAL; //在全局队列中\n\tq->release = 0;\n\tq->overload = 0;\n\tq->overload_threshold = MQ_OVERLOAD;\n\tq->queue = skynet_malloc(sizeof(struct skynet_message) * q->cap); //分配连续的cap内存用于存放具体消息\n\tq->next = NULL;\n\n\treturn q;\n}\n\nstatic void \n_release(struct message_queue *q) {\n\tassert(q->next == NULL);\n\tSPIN_DESTROY(q)\n\tskynet_free(q->queue);\n\tskynet_free(q);\n}\n\nuint32_t \nskynet_mq_handle(struct message_queue *q) {\n\treturn q->handle;\n}\n\n//消息队列的长度\nint\nskynet_mq_length(struct message_queue *q) {\n\tint head, tail,cap;\n\n\tSPIN_LOCK(q)\n\thead = q->head;\n\ttail = q->tail;\n\tcap = q->cap;\n\tSPIN_UNLOCK(q)\n\t\n\tif (head <= tail) {\n\t\treturn tail - head;\n\t}\n\treturn tail + cap - head;\n}\n\nint\nskynet_mq_overload(struct message_queue *q) {\n\tif (q->overload) {\n\t\tint overload = q->overload;\n\t\tq->overload = 0;\n\t\treturn overload;\n\t} \n\treturn 0;\n}\n\n//弹出消息队列中的头部消息\nint\nskynet_mq_pop(struct message_queue *q, struct skynet_message *message) {\n\tint ret = 1;\n\tSPIN_LOCK(q)\n\n\tif (q->head != q->tail) { //如果队列头不等于队列尾\n\t\t*message = q->queue[q->head++]; //取出队列头\n\t\tret = 0; //弹出成功返回0\n\t\tint head = q->head;\n\t\tint tail = q->tail;\n\t\tint cap = q->cap;\n\n\t\tif (head >= cap) { //如果队列头 >= 最大队列数\n\t\t\tq->head = head = 0;\n\t\t}\n\t\tint length = tail - head;\n\t\tif (length < 0) {\n\t\t\tlength += cap;\n\t\t}\n\t\twhile (length > q->overload_threshold) {\n\t\t\tq->overload = length;\n\t\t\tq->overload_threshold *= 2;\n\t\t}\n\t} else {\n\t\t// reset overload_threshold when queue is empty\n\t\tq->overload_threshold = MQ_OVERLOAD;\n\t}\n\n\tif (ret) { \n\t\tq->in_global = 0; //设置在全局状态为0\n\t}\n\t\n\tSPIN_UNLOCK(q)\n\n\treturn ret;\n}\n\n//扩展消息队列message_queue 中的存放消息的内存空间\nstatic void\nexpand_queue(struct message_queue *q) {\n\tstruct skynet_message *new_queue = skynet_malloc(sizeof(struct skynet_message) * q->cap * 2);\n\tint i;\n\tfor (i=0;i<q->cap;i++) {\n\t\tnew_queue[i] = q->queue[(q->head + i) % q->cap];\n\t}\n\tq->head = 0;\n\tq->tail = q->cap;\n\tq->cap *= 2;\n\t\n\tskynet_free(q->queue);\n\tq->queue = new_queue;\n}\n\n//消息压入消息队列 如果标识为在全局中 则将消息队列挂在到全局消息队列的尾部\nvoid \nskynet_mq_push(struct message_queue *q, struct skynet_message *message) {\n\tassert(message);\n\tSPIN_LOCK(q)\n\n\tq->queue[q->tail] = *message; //将消息压入消息队列的尾\n\tif (++ q->tail >= q->cap) {\n\t\tq->tail = 0;\n\t}\n\n\tif (q->head == q->tail) { //如果队列头等于队列尾 扩容\n\t\texpand_queue(q);\n\t}\n\n\tif (q->in_global == 0) { //如果在全局标志等于0  设置标志为在全局 压入全局消息队列\n\t\tq->in_global = MQ_IN_GLOBAL;\n\t\tskynet_globalmq_push(q);\n\t}\n\t\n\tSPIN_UNLOCK(q)\n}\n\n//初始化全局消息队列 分配和初始struct global_queue内存结构\nvoid \nskynet_mq_init() {\n\tstruct global_queue *q = skynet_malloc(sizeof(*q));\n\tmemset(q,0,sizeof(*q));\n\tSPIN_INIT(q);\n\tQ=q;\n}\n\n//标记消息队列release = 1 并且将消息队列放入全局消息队列链表\nvoid \nskynet_mq_mark_release(struct message_queue *q) {\n\tSPIN_LOCK(q)\n\tassert(q->release == 0);\n\tq->release = 1;\n\tif (q->in_global != MQ_IN_GLOBAL) {\n\t\tskynet_globalmq_push(q);\n\t}\n\tSPIN_UNLOCK(q)\n}\n\nstatic void\n_drop_queue(struct message_queue *q, message_drop drop_func, void *ud) {\n\tstruct skynet_message msg;\n\twhile(!skynet_mq_pop(q, &msg)) { //消息弹出消息队列 删除消息队列中的消息内存块数据\n\t\tdrop_func(&msg, ud);\n\t}\n\t_release(q);\n}\n\n//释放消息队列  消息弹出消息队列 删除消息队列中的消息内存块数据\nvoid \nskynet_mq_release(struct message_queue *q, message_drop drop_func, void *ud) {\n\tSPIN_LOCK(q)\n\t\n\tif (q->release) {\n\t\tSPIN_UNLOCK(q)\n\t\t_drop_queue(q, drop_func, ud);\n\t} else {\n\t\tskynet_globalmq_push(q);\n\t\tSPIN_UNLOCK(q)\n\t}\n}\n",
+			"file": "skynet-src/skynet_mq.c",
+			"file_size": 6162,
+			"file_write_time": 131360074001682864,
+			"settings":
+			{
+				"buffer_size": 5341,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		}
 	],
 	"build_system": "",
 	"build_system_choices":
@@ -148,13 +335,14 @@
 	},
 	"expanded_folders":
 	[
-		"/D/share_code/skynet_notes"
+		"/D/share_code/skynet_notes",
+		"/D/share_code/skynet_notes/skynet-src"
 	],
 	"file_history":
 	[
+		"/D/share_code/skynet_notes/lualib-src/lua-skynet.c",
 		"/D/share_code/skynet_notes/Makefile",
 		"/D/share_code/skynet_notes/platform.mk",
-		"/D/share_code/skynet_notes/lualib-src/lua-skynet.c",
 		"/D/share_code/ddz_skynet/skynet/lualib/socket.lua",
 		"/D/share_code/skynet_notes/examples/main.lua",
 		"/D/share_code/skynet_notes/examples/agent.lua",
@@ -191,13 +379,14 @@
 	],
 	"find":
 	{
-		"height": 34.0
+		"height": 36.0
 	},
 	"find_in_files":
 	{
 		"height": 90.0,
 		"where_history":
 		[
+			"D:\\share_code\\skynet_notes",
 			"D:\\share_code\\skynet",
 			"D:\\share_code\\skynet\\skynet-src",
 			"D:\\develop\\src",
@@ -209,6 +398,15 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"context_dec",
+			"skynet_context_grab",
+			"logfile",
+			"result",
+			"next",
+			"_release",
+			"skynet_handle_namehandle",
+			"skynet_harbor_start",
+			"MESSAGE_TYPE_MASK",
 			"MYCFLAGS",
 			"luaopen_skynet_core",
 			"lsend",
@@ -334,8 +532,630 @@
 	"groups":
 	[
 		{
+			"selected": 7,
 			"sheets":
 			[
+				{
+					"buffer": 0,
+					"file": "skynet-src/skynet_daemon.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 2567,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2374,
+								2374
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C.sublime-syntax",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 1800.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 19,
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "skynet-src/skynet_handle.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 6659,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								3627,
+								3628
+							]
+						],
+						"settings":
+						{
+							"origin_encoding": "ASCII",
+							"syntax": "Packages/C++/C.sublime-syntax",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 2477.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "skynet-src/skynet_harbor.h",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 628,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								559,
+								578
+							]
+						],
+						"settings":
+						{
+							"origin_encoding": "ASCII",
+							"syntax": "Packages/C++/C++.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 12,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "skynet-src/skynet_harbor.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1747,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								618,
+								618
+							]
+						],
+						"settings":
+						{
+							"origin_encoding": "ASCII",
+							"syntax": "Packages/C++/C.sublime-syntax",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 11,
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "skynet-src/skynet_imp.h",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 558,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								505,
+								517
+							]
+						],
+						"settings":
+						{
+							"origin_encoding": "ASCII",
+							"syntax": "Packages/C++/C++.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 13,
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "skynet-src/skynet_monitor.h",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 390,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								382,
+								382
+							]
+						],
+						"settings":
+						{
+							"origin_encoding": "ASCII",
+							"syntax": "Packages/C++/C++.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 6,
+					"type": "text"
+				},
+				{
+					"buffer": 6,
+					"file": "skynet-src/skynet_monitor.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1231,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1231,
+								1231
+							]
+						],
+						"settings":
+						{
+							"origin_encoding": "ASCII",
+							"syntax": "Packages/C++/C.sublime-syntax",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": -0.0,
+						"translation.y": 540.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				},
+				{
+					"buffer": 7,
+					"file": "skynet-src/skynet_server.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 20725,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								6831,
+								6850
+							]
+						],
+						"settings":
+						{
+							"origin_encoding": "ASCII",
+							"syntax": "Packages/C++/C.sublime-syntax",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 5117.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				},
+				{
+					"buffer": 8,
+					"file": "skynet-src/skynet_module.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 4061,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								381,
+								381
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C.sublime-syntax",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 5,
+					"type": "text"
+				},
+				{
+					"buffer": 9,
+					"file": "skynet-src/skynet_module.h",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1189,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								395,
+								401
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 4,
+					"type": "text"
+				},
+				{
+					"buffer": 10,
+					"file": "skynet-src/skynet_server.h",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1218,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								147,
+								147
+							]
+						],
+						"settings":
+						{
+							"origin_encoding": "ASCII",
+							"syntax": "Packages/C++/C++.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 3,
+					"type": "text"
+				},
+				{
+					"buffer": 11,
+					"file": "service-src/service_gate.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 9594,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								227,
+								227
+							]
+						],
+						"settings":
+						{
+							"origin_encoding": "ASCII",
+							"syntax": "Packages/C++/C.sublime-syntax",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 17,
+					"type": "text"
+				},
+				{
+					"buffer": 12,
+					"file": "service-src/service_harbor.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 18487,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								697,
+								697
+							]
+						],
+						"settings":
+						{
+							"origin_encoding": "ASCII",
+							"syntax": "Packages/C++/C.sublime-syntax",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 300.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 16,
+					"type": "text"
+				},
+				{
+					"buffer": 13,
+					"file": "service-src/service_snlua.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 5032,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								459,
+								459
+							]
+						],
+						"settings":
+						{
+							"origin_encoding": "ASCII",
+							"syntax": "Packages/C++/C.sublime-syntax",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 60.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 10,
+					"type": "text"
+				},
+				{
+					"buffer": 14,
+					"file": "lualib-src/lua-skynet.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 9371,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								437,
+								437
+							]
+						],
+						"settings":
+						{
+							"origin_encoding": "ASCII",
+							"syntax": "Packages/C++/C.sublime-syntax",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 15,
+					"type": "text"
+				},
+				{
+					"buffer": 15,
+					"file": "service/cmaster.lua",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 3256,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"origin_encoding": "ASCII",
+							"syntax": "Packages/Lua/Lua.sublime-syntax",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 1380.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 14,
+					"type": "text"
+				},
+				{
+					"buffer": 16,
+					"file": "skynet-src/spinlock.h",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1611,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								352,
+								352
+							]
+						],
+						"settings":
+						{
+							"origin_encoding": "ASCII",
+							"syntax": "Packages/C++/C++.sublime-syntax",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 9,
+					"type": "text"
+				},
+				{
+					"buffer": 17,
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1372,
+						"regions":
+						{
+							"match":
+							{
+								"flags": 112,
+								"regions":
+								[
+									[
+										258,
+										275
+									],
+									[
+										565,
+										582
+									],
+									[
+										884,
+										901
+									],
+									[
+										1197,
+										1214
+									]
+								],
+								"scope": ""
+							}
+						},
+						"selection":
+						[
+							[
+								579,
+								579
+							]
+						],
+						"settings":
+						{
+							"default_dir": "D:\\share_code\\skynet_notes",
+							"detect_indentation": false,
+							"line_numbers": false,
+							"output_tag": 1,
+							"result_base_dir": "",
+							"result_file_regex": "^([^ \t].*):$",
+							"result_line_regex": "^ +([0-9]+):",
+							"scroll_past_end": true,
+							"syntax": "Packages/Default/Find Results.hidden-tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 18,
+					"type": "text"
+				},
+				{
+					"buffer": 18,
+					"file": "skynet-src/skynet_mq.h",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1298,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1289,
+								1289
+							]
+						],
+						"settings":
+						{
+							"origin_encoding": "ASCII",
+							"syntax": "Packages/C++/C++.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 180.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 7,
+					"type": "text"
+				},
+				{
+					"buffer": 19,
+					"file": "skynet-src/skynet_mq.c",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 5341,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								4856,
+								4856
+							]
+						],
+						"settings":
+						{
+							"origin_encoding": "ASCII",
+							"syntax": "Packages/C++/C.sublime-syntax",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 4380.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 8,
+					"type": "text"
+				}
 			]
 		}
 	],
@@ -387,6 +1207,10 @@
 		"last_filter": "",
 		"selected_items":
 		[
+			[
+				"cmaster",
+				"service\\cmaster.lua"
+			],
 			[
 				"socket.lua",
 				"ddz_skynet\\skynet\\lualib\\socket.lua"
