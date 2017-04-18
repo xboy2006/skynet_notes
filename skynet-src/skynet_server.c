@@ -713,12 +713,12 @@ skynet_command(struct skynet_context * context, const char * cmd , const char * 
 static void
 _filter_args(struct skynet_context * context, int type, int *session, void ** data, size_t * sz) {
 	int needcopy = !(type & PTYPE_TAG_DONTCOPY);
-	int allocsession = type & PTYPE_TAG_ALLOCSESSION;
+	int allocsession = type & PTYPE_TAG_ALLOCSESSION;// type中含有 PTYPE_TAG_ALLOCSESSION ，则session必须是0
 	type &= 0xff;
 
 	if (allocsession) {
 		assert(*session == 0);
-		*session = skynet_context_newsession(context);
+		*session = skynet_context_newsession(context);// 分配一个新的 session id
 	}
 
 	if (needcopy && *data) {
@@ -767,12 +767,12 @@ skynet_send(struct skynet_context * context, uint32_t source, uint32_t destinati
 		smsg.data = data;
 		smsg.sz = sz;
 
-		if (skynet_context_push(destination, &smsg)) {
-			skynet_free(data);
+		if (skynet_context_push(destination, &smsg)) { //消息压入目的服务的消息队列
+			skynet_free(data); 
 			return -1;
 		}
 	}
-	return session;
+	return session; //返回sesson信息
 }
 
 int
@@ -781,26 +781,26 @@ skynet_sendname(struct skynet_context * context, uint32_t source, const char * a
 		source = context->handle;
 	}
 	uint32_t des = 0;
-	if (addr[0] == ':') {
-		des = strtoul(addr+1, NULL, 16);
-	} else if (addr[0] == '.') {
-		des = skynet_handle_findname(addr + 1);
+	if (addr[0] == ':') { //直接的handle地址
+		des = strtoul(addr+1, NULL, 16);//字符串转换为unsigned long 例如开始是：1234这种格式说明直接的handle
+	} else if (addr[0] == '.') { // . 说明是以名字开始的地址 需要根据名字查找 对应的 handle
+		des = skynet_handle_findname(addr + 1);//根据服务名字找到对应的handle
 		if (des == 0) {
-			if (type & PTYPE_TAG_DONTCOPY) {
+			if (type & PTYPE_TAG_DONTCOPY) { //不需要copy的消息类型
 				skynet_free(data);
 			}
 			return -1;
 		}
-	} else {
+	} else { //// 其他的目的地址 即远程的地址
 		_filter_args(context, type, &session, (void **)&data, &sz);
 
-		struct remote_message * rmsg = skynet_malloc(sizeof(*rmsg));
+		struct remote_message * rmsg = skynet_malloc(sizeof(*rmsg)); //生成远程消息
 		copy_name(rmsg->destination.name, addr);
 		rmsg->destination.handle = 0;
 		rmsg->message = data;
 		rmsg->sz = sz;
 
-		skynet_harbor_send(rmsg, source, session);
+		skynet_harbor_send(rmsg, source, session); //将消息放入harbor服务的消息队列
 		return session;
 	}
 
