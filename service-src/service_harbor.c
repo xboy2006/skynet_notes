@@ -21,7 +21,7 @@
 #include <stdint.h>
 #include <unistd.h>
 
-//节点服务，与其他节点互通
+//节点服务，与其他节点互通 harbor.so // harbor主要用于skynet集群 不同节点间的通信 是skynet集群的通信模块
 
 #define HASH_SIZE 4096
 #define DEFAULT_QUEUE_SIZE 1024
@@ -35,16 +35,18 @@
  */
 struct remote_message_header {
 	uint32_t source;
-	uint32_t destination;
+	uint32_t destination; //高八位保存了消息消息类型和本地消息的harbor id
 	uint32_t session;
 };
 
+// harbor 消息结构
 struct harbor_msg {
 	struct remote_message_header header;
 	void * buffer;
 	size_t size;
 };
 
+//harbor 节点消息队列结构
 struct harbor_msg_queue {
 	int size;
 	int head;
@@ -52,14 +54,17 @@ struct harbor_msg_queue {
 	struct harbor_msg * data;
 };
 
+// key-value map 链表 即 node的结构
+// 这里用链地址法解决的 hash冲突问题 所以先找到 bucket再在链表中查找
 struct keyvalue {
 	struct keyvalue * next;
-	char key[GLOBALNAME_LENGTH];
-	uint32_t hash;
-	uint32_t value;
-	struct harbor_msg_queue * queue;
+	char key[GLOBALNAME_LENGTH]; // value: name
+	uint32_t hash;               // hash
+	uint32_t value;              // key  : handle
+	struct harbor_msg_queue * queue; //该链表的每个节点都有一个消息队列mq 用于保存这个节点的消息
 };
 
+// map map的每一个节点都有一个消息队列
 struct hashmap {
 	struct keyvalue *node[HASH_SIZE];
 };
@@ -80,11 +85,12 @@ struct slave {
 	char * recv_buffer;
 };
 
+// harbor的结构 harbor保存了本集群所有节点的通信地址 skynet集群内部会简历 n*n个节点 相当于每个节点间都建立了tcp连接
 struct harbor {
-	struct skynet_context *ctx;
+	struct skynet_context *ctx; //harbor节点服务的 skynet_ctx
 	int id;
 	uint32_t slave;
-	struct hashmap * map;
+	struct hashmap * map;   //hashmap存储keyvalue
 	struct slave s[REMOTE_MAX];
 };
 
@@ -652,11 +658,12 @@ harbor_id(struct harbor *h, int fd) {
 	return 0;
 }
 
+//harbor的消息回调
 static int
 mainloop(struct skynet_context * context, void * ud, int type, int session, uint32_t source, const void * msg, size_t sz) {
 	struct harbor * h = ud;
 	switch (type) {
-	case PTYPE_SOCKET: {
+	case PTYPE_SOCKET: {// socket type
 		const struct skynet_socket_message * message = msg;
 		switch(message->type) {
 		case SKYNET_SOCKET_TYPE_DATA:
@@ -689,11 +696,11 @@ mainloop(struct skynet_context * context, void * ud, int type, int session, uint
 		}
 		return 0;
 	}
-	case PTYPE_HARBOR: {
+	case PTYPE_HARBOR: { // harbor type 即远程消息 发给某个 远程主机
 		harbor_command(h, msg,sz,session,source);
 		return 0;
 	}
-	default: {
+	default: { // header.source != 0 从一个handle发送到另外一个handle
 		// remote message out
 		const struct remote_message *rmsg = msg;
 		if (rmsg->destination.handle == 0) {
@@ -711,6 +718,7 @@ mainloop(struct skynet_context * context, void * ud, int type, int session, uint
 	}
 }
 
+ //harbor module init 函数
 int
 harbor_init(struct harbor *h, struct skynet_context *ctx, const char * args) {
 	h->ctx = ctx;
@@ -722,8 +730,7 @@ harbor_init(struct harbor *h, struct skynet_context *ctx, const char * args) {
 	}
 	h->id = harbor_id;
 	h->slave = slave;
-	skynet_callback(ctx, h, mainloop);
-	skynet_harbor_start(ctx);
-
+	skynet_callback(ctx, h, mainloop); //设置harbor服务的回调函数 同时保存harbor结构
+	skynet_harbor_start(ctx); // 增加引用计数
 	return 0;
 }

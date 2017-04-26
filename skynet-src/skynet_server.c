@@ -812,10 +812,11 @@ skynet_context_handle(struct skynet_context *ctx) {
 	return ctx->handle;
 }
 
+//设置服务的skynet_context 的cb 和cb字段，服务的回调函数和服务的数据结构字段 例如 snlua logger gate等
 void 
 skynet_callback(struct skynet_context * context, void *ud, skynet_cb cb) {
-	context->cb = cb;
-	context->cb_ud = ud;
+	context->cb = cb;   //服务的消息处理函数
+	context->cb_ud = ud; //服务结构
 }
 
 //向本地ctx服务发送一条消息

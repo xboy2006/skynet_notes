@@ -7,12 +7,16 @@
 
 #define MESSAGEPOOL 1023
 
+// gate 服务中应用层msg的缓冲区实现
+
+// msg node
 struct message {
 	char * buffer;
 	int size;
 	struct message * next;
 };
 
+// 数据缓冲区链表 用来保存应用层的消息数据
 struct databuffer {
 	int header;
 	int offset;
@@ -21,11 +25,13 @@ struct databuffer {
 	struct message * tail;
 };
 
+// msg_pool_list 消息池链表
 struct messagepool_list {
 	struct messagepool_list *next;
 	struct message pool[MESSAGEPOOL];
 };
 
+// 消息池 存放消息池链
 struct messagepool {
 	struct messagepool_list * pool;
 	struct message * freelist;

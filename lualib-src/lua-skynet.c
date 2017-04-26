@@ -12,7 +12,7 @@
 #include <string.h>
 #include <assert.h>
 
-//核心库，封装skynet给lua使用
+//核心库，封装skynet给lua使用  skynet.so
 
 struct snlua {
 	lua_State * L;

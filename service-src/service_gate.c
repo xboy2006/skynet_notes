@@ -11,27 +11,36 @@
 #include <stdarg.h>
 
 //网关服务，管理Socket
+// gate服务用与skynet对外的TCP通信 它将外部的消息格式转化成skynet内部的消息
 
 #define BACKLOG 32
 
+// 1.watchdog 模式，由 gate 加上包头，同时处理控制信息和数据信息的所有数据；
+// 2.agent    模式，让每个 agent 处理独立连接；
+// 3.broker   模式，由一个 broker 服务处理不同连接上的所有数据包。
+// 无论是哪种模式，控制信息都是交给 watchdog 去处理的，而数据包如果不发给 watchdog 而是发送给 agent 或 broker 的话，
+// 则不会有额外的数据头（也减少了数据拷贝）。识别这些包是从外部发送进来的方法是检查消息包的类型是否为 PTYPE_CLIENT 。当然，你也可以自己定制消息类型让 gate 通知你。
+
+// connection结构保存了客户端的连接信息
 struct connection {
-	int id;	// skynet_socket id
+	int id;	// skynet_socket id  // skynet_socket id skynet应用层有一个socket池
 	uint32_t agent;
 	uint32_t client;
 	char remote_name[32];
 	struct databuffer buffer;
 };
 
+// 对外的 tcp连接
 struct gate {
-	struct skynet_context *ctx;
-	int listen_id;
-	uint32_t watchdog;
-	uint32_t broker;
+	struct skynet_context *ctx;  //网关服务的skynet_context结构
+	int listen_id;       // listen fd
+	uint32_t watchdog;   // watchdog handle
+	uint32_t broker;     // handle
 	int client_tag;
 	int header_size;
 	int max_connection;
 	struct hashid hash;
-	struct connection *conn;
+	struct connection *conn;   // 客户端连接fd的保存
 	// todo: save message pool ptr for release
 	struct messagepool mp;
 };
@@ -87,6 +96,7 @@ _forward_agent(struct gate * g, int fd, uint32_t agentaddr, uint32_t clientaddr)
 	}
 }
 
+// 控制命令的处理
 static void
 _ctrl(struct gate * g, const void * msg, int sz) {
 	struct skynet_context * ctx = g->ctx;
@@ -102,7 +112,7 @@ _ctrl(struct gate * g, const void * msg, int sz) {
 			break;
 		}
 	}
-	if (memcmp(command,"kick",i)==0) {
+	if (memcmp(command,"kick",i)==0) {// kick 踢掉
 		_parm(tmp, sz, i);
 		int uid = strtol(command , NULL, 10);
 		int id = hashid_lookup(&g->hash, uid);
@@ -111,7 +121,7 @@ _ctrl(struct gate * g, const void * msg, int sz) {
 		}
 		return;
 	}
-	if (memcmp(command,"forward",i)==0) {
+	if (memcmp(command,"forward",i)==0) { //// forward 向前传递消息
 		_parm(tmp, sz, i);
 		char * client = tmp;
 		char * idstr = strsep(&client, " ");
@@ -187,7 +197,7 @@ _forward(struct gate *g, struct connection * c, int size) {
 		skynet_send(ctx, 0, g->watchdog, PTYPE_TEXT | PTYPE_TAG_DONTCOPY, 1, tmp, size + n);
 	}
 }
-
+// 分发消息
 static void
 dispatch_message(struct gate *g, struct connection *c, int id, void * data, int sz) {
 	databuffer_push(&c->buffer,&g->mp, data, sz);
@@ -210,11 +220,12 @@ dispatch_message(struct gate *g, struct connection *c, int id, void * data, int 
 	}
 }
 
+// socket消息的处理
 static void
 dispatch_socket_message(struct gate *g, const struct skynet_socket_message * message, int sz) {
 	struct skynet_context * ctx = g->ctx;
 	switch(message->type) {
-	case SKYNET_SOCKET_TYPE_DATA: {
+	case SKYNET_SOCKET_TYPE_DATA: {// data
 		int id = hashid_lookup(&g->hash, message->id);
 		if (id>=0) {
 			struct connection *c = &g->conn[id];
@@ -226,7 +237,7 @@ dispatch_socket_message(struct gate *g, const struct skynet_socket_message * mes
 		}
 		break;
 	}
-	case SKYNET_SOCKET_TYPE_CONNECT: {
+	case SKYNET_SOCKET_TYPE_CONNECT: {// connect
 		if (message->id == g->listen_id) {
 			// start listening
 			break;
@@ -238,7 +249,7 @@ dispatch_socket_message(struct gate *g, const struct skynet_socket_message * mes
 		}
 		break;
 	}
-	case SKYNET_SOCKET_TYPE_CLOSE:
+	case SKYNET_SOCKET_TYPE_CLOSE:// close and error
 	case SKYNET_SOCKET_TYPE_ERROR: {
 		int id = hashid_remove(&g->hash, message->id);
 		if (id>=0) {
@@ -250,7 +261,7 @@ dispatch_socket_message(struct gate *g, const struct skynet_socket_message * mes
 		}
 		break;
 	}
-	case SKYNET_SOCKET_TYPE_ACCEPT:
+	case SKYNET_SOCKET_TYPE_ACCEPT:// accept
 		// report accept, then it will be get a SKYNET_SOCKET_TYPE_CONNECT message
 		assert(g->listen_id == message->id);
 		if (hashid_full(&g->hash)) {
@@ -273,22 +284,23 @@ dispatch_socket_message(struct gate *g, const struct skynet_socket_message * mes
 	}
 }
 
+//gate的回调
 static int
 _cb(struct skynet_context * ctx, void * ud, int type, int session, uint32_t source, const void * msg, size_t sz) {
 	struct gate *g = ud;
 	switch(type) {
-	case PTYPE_TEXT:
+	case PTYPE_TEXT: //文本消息 基本是一些控制命令
 		_ctrl(g , msg , (int)sz);
 		break;
-	case PTYPE_CLIENT: {
+	case PTYPE_CLIENT: { //客户端消息
 		if (sz <=4 ) {
 			skynet_error(ctx, "Invalid client message from %x",source);
 			break;
 		}
 		// The last 4 bytes in msg are the id of socket, write following bytes to it
-		const uint8_t * idbuf = msg + sz - 4;
+		const uint8_t * idbuf = msg + sz - 4; //msg的后4个字节是socket的id 之后是剩下的字节
 		uint32_t uid = idbuf[0] | idbuf[1] << 8 | idbuf[2] << 16 | idbuf[3] << 24;
-		int id = hashid_lookup(&g->hash, uid);
+		int id = hashid_lookup(&g->hash, uid); //找到这个socket id即在应用层维护的socket fd
 		if (id>=0) {
 			// don't send id (last 4 bytes)
 			skynet_socket_send(ctx, uid, (void*)msg, sz-4);
@@ -299,7 +311,7 @@ _cb(struct skynet_context * ctx, void * ud, int type, int session, uint32_t sour
 			break;
 		}
 	}
-	case PTYPE_SOCKET:
+	case PTYPE_SOCKET:// socket的消息类型 分发消息
 		// recv socket message from skynet_socket
 		dispatch_socket_message(g, msg, (int)(sz-sizeof(struct skynet_socket_message)));
 		break;
@@ -346,7 +358,7 @@ gate_init(struct gate *g , struct skynet_context * ctx, char * parm) {
 	char binding[sz];
 	int client_tag = 0;
 	char header;
-	int n = sscanf(parm, "%c %s %s %d %d", &header, watchdog, binding, &client_tag, &max);
+	int n = sscanf(parm, "%c %s %s %d %d", &header, watchdog, binding, &client_tag, &max); //按照指定格式取字符串中的数据
 	if (n<4) {
 		skynet_error(ctx, "Invalid gate parm %s",parm);
 		return 1;
@@ -366,7 +378,7 @@ gate_init(struct gate *g , struct skynet_context * ctx, char * parm) {
 	if (watchdog[0] == '!') {
 		g->watchdog = 0;
 	} else {
-		g->watchdog = skynet_queryname(ctx, watchdog);
+		g->watchdog = skynet_queryname(ctx, watchdog); //根据名字查询到watchdog服务的handle
 		if (g->watchdog == 0) {
 			skynet_error(ctx, "Invalid watchdog %s",watchdog);
 			return 1;
@@ -376,7 +388,7 @@ gate_init(struct gate *g , struct skynet_context * ctx, char * parm) {
 	g->ctx = ctx;
 
 	hashid_init(&g->hash, max);
-	g->conn = skynet_malloc(max * sizeof(struct connection));
+	g->conn = skynet_malloc(max * sizeof(struct connection)); //分配链接管理表
 	memset(g->conn, 0, max *sizeof(struct connection));
 	g->max_connection = max;
 	int i;

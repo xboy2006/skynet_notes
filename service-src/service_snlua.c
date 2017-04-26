@@ -9,11 +9,19 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+//snlu.so
+// LUA_CACHELIB may defined in patched lua for shared proto
+// lua 服务生成器
+// lua服务的消息　先到 service_snlua，再分发到lua服务中
+// 每个lua服务其实　是一个service_snlua + 实际的lua服务　总和
+//skynet_start中调用bootstrap(ctx, config->bootstrap); //创建snlua服务模块，及ctx
+//参数为 snlua bootstrap
+
 #define MEMORY_WARNING_REPORT (1024 * 1024 * 32)
 
 struct snlua {
 	lua_State * L;
-	struct skynet_context * ctx;
+	struct skynet_context * ctx; //服务的skynet_context结构
 	size_t mem;
 	size_t mem_report;
 	size_t mem_limit;
@@ -38,9 +46,9 @@ codecache(lua_State *L) {
 		{ "mode", cleardummy },
 		{ NULL, NULL },
 	};
-	luaL_newlib(L,l);
-	lua_getglobal(L, "loadfile");
-	lua_setfield(L, -2, "loadfile");
+	luaL_newlib(L,l);  //创建一个新的表吧clear和mode函数注册进去
+	lua_getglobal(L, "loadfile");  //_G["loadfile"] 入栈
+	lua_setfield(L, -2, "loadfile"); //L[-2][loadfile] = L[-1] 相当于把 loadfiel注册到新建的表中
 	return 1;
 }
 
@@ -72,19 +80,21 @@ optstring(struct skynet_context *ctx, const char *key, const char * str) {
 	return ret;
 }
 
+
 static int
 init_cb(struct snlua *l, struct skynet_context *ctx, const char * args, size_t sz) {
 	lua_State *L = l->L;
 	l->ctx = ctx;
-	lua_gc(L, LUA_GCSTOP, 0);
-	lua_pushboolean(L, 1);  /* signal for libraries to ignore env. vars. */
+	lua_gc(L, LUA_GCSTOP, 0); //停止垃圾回收
+	lua_pushboolean(L, 1); //放个nil到栈上 /* signal for libraries to ignore env. vars. */
 	lua_setfield(L, LUA_REGISTRYINDEX, "LUA_NOENV");
 	luaL_openlibs(L);
-	lua_pushlightuserdata(L, ctx);
-	lua_setfield(L, LUA_REGISTRYINDEX, "skynet_context");
-	luaL_requiref(L, "skynet.codecache", codecache , 0);
+	lua_pushlightuserdata(L, ctx); //服务的ctx放到栈上
+	lua_setfield(L, LUA_REGISTRYINDEX, "skynet_context"); //_G[REGISTER_INDEX]["skynet_context"] = L[1] 将ctx放在注册表中
+	luaL_requiref(L, "skynet.codecache", codecache , 0); //package.load[skynet.codecache]没有的话则调用codecache[skynet.codecache]
 	lua_pop(L,1);
 
+	//设置环境变量 LUA_PATH  LUA_CPATH  LUA_SERVICE  LUA_PRELOAD
 	const char *path = optstring(ctx, "lua_path","./lualib/?.lua;./lualib/?/init.lua");
 	lua_pushstring(L, path);
 	lua_setglobal(L, "LUA_PATH");
@@ -98,12 +108,13 @@ init_cb(struct snlua *l, struct skynet_context *ctx, const char * args, size_t s
 	lua_pushstring(L, preload);
 	lua_setglobal(L, "LUA_PRELOAD");
 
+	// 设置了栈回溯函数
 	lua_pushcfunction(L, traceback);
 	assert(lua_gettop(L) == 1);
 
 	const char * loader = optstring(ctx, "lualoader", "./lualib/loader.lua");
 
-	int r = luaL_loadfile(L,loader);
+	int r = luaL_loadfile(L,loader); //加载loader.lua
 	if (r != LUA_OK) {
 		skynet_error(ctx, "Can't load %s : %s", loader, lua_tostring(L, -1));
 		report_launcher_error(ctx);
@@ -131,11 +142,12 @@ init_cb(struct snlua *l, struct skynet_context *ctx, const char * args, size_t s
 	return 0;
 }
 
+//snlua 服务受到消息时的处理
 static int
 launch_cb(struct skynet_context * context, void *ud, int type, int session, uint32_t source , const void * msg, size_t sz) {
 	assert(type == 0 && session == 0);
 	struct snlua *l = ud;
-	skynet_callback(context, NULL, NULL);
+	skynet_callback(context, NULL, NULL); //初始服务的回调
 	int err = init_cb(l, context, msg, sz);
 	if (err) {
 		skynet_command(context, "EXIT", NULL);
@@ -144,15 +156,16 @@ launch_cb(struct skynet_context * context, void *ud, int type, int session, uint
 	return 0;
 }
 
+//skynet_context_new 创建snlua服务会调用 create init 
 int
 snlua_init(struct snlua *l, struct skynet_context *ctx, const char * args) {
 	int sz = strlen(args);
 	char * tmp = skynet_malloc(sz);
 	memcpy(tmp, args, sz);
-	skynet_callback(ctx, l , launch_cb);
-	const char * self = skynet_command(ctx, "REG", NULL);
+	skynet_callback(ctx, l , launch_cb); //注册snlua的回到哦函数为launch_cb
+	const char * self = skynet_command(ctx, "REG", NULL); //服务注册名字 “:handle”
 	uint32_t handle_id = strtoul(self+1, NULL, 16);
-	// it must be first message
+	// it must be first message ////给他自己发送一个信息，目的地为刚注册的地址，最终将该消息push到对应的mq上
 	skynet_send(ctx, 0, handle_id, PTYPE_TAG_DONTCOPY,0, tmp, sz);
 	return 0;
 }
@@ -179,18 +192,18 @@ lalloc(void * ud, void *ptr, size_t osize, size_t nsize) {
 
 struct snlua *
 snlua_create(void) {
-	struct snlua * l = skynet_malloc(sizeof(*l));
+	struct snlua * l = skynet_malloc(sizeof(*l));//创建snlua结构体
 	memset(l,0,sizeof(*l));
 	l->mem_report = MEMORY_WARNING_REPORT;
 	l->mem_limit = 0;
-	l->L = lua_newstate(lalloc, l);
+	l->L = lua_newstate(lalloc, l); //生成新的lua_state 放到snlua的l中
 	return l;
 }
 
 void
 snlua_release(struct snlua *l) {
-	lua_close(l->L);
-	skynet_free(l);
+	lua_close(l->L); //关闭snlua中的lua_state
+	skynet_free(l); //释放snlua结构
 }
 
 void
